@@ -3,6 +3,7 @@ from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import chess, time, pygame, chess.engine, cv2, copy, math
 import numpy as np
+import random as rng
 from apriltag import apriltag
 
 #-----------------------------------------DETECTION FUNCTIONS--------------------------------------------------
@@ -91,7 +92,7 @@ def perspective_shift(image, corners):
 
 def get_detection_array(image):
     labeled_image = copy.copy(image)
-    
+        
     Files = "ABCDEFGH"
     
     blue = (255, 0, 0)
@@ -128,13 +129,10 @@ def get_detection_array(image):
     return labeled_image, detection_array
 
 def edge_detection(image):
-    image = cv2.medianBlur(image,11)
-    edges = cv2.Canny(image,80,100)
-    #cv2.imshow(str(np.sum(edges)), edges)
-    #cv2.imshow("Original", image)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
-    return np.stack((edges,)*3, axis=-1), np.sum(edges)
+    blurred = cv2.medianBlur(image,3)
+    edges = cv2.Canny(blurred,80,100)
+    edges = np.stack((edges,)*3, axis=-1)
+    return edges, np.sum(edges)
 
 def get_color_array(image, detection_array):
     blue = (255, 0, 0)
@@ -144,36 +142,103 @@ def get_color_array(image, detection_array):
     gray = cv2.cvtColor(copy.copy(image), cv2.COLOR_BGR2GRAY)
     size = gray.shape[0]
     pixel = size / 82
-    color_array = np.zeros((8, 8), dtype=int)
-    average_empty_white = 0
-    average_empty_black = 0
+    color_array = np.zeros((8, 8), dtype=float)
+    white_square_ref = 0
+    empty_white_count = 0
+    black_square_ref = 0
+    empty_black_count = 0
     for y in range(8):
         for x in range(8):
-            start_point = (int(round(3 * pixel + 10 * pixel * x)), int(round(3 * pixel + 10 * pixel * y)))
-            end_point = (int(round(10 * pixel * (x + 1) - pixel)), int(round(10 * pixel * (y + 1) - pixel)))
-            
-            average = average_color(gray[start_point[1]:end_point[1], start_point[0]:end_point[0]])
-                        
-            cv2.putText(gray, str(average), (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, 1, blue, 4)
-            
+            #If the current square is empty
+            if (detection_array[y][x] == 0):
+                start_point = (int(round(2 * pixel + 10 * pixel * x)), int(round(2 * pixel + 10 * pixel * y)))
+                end_point = (int(round(10 * pixel * (x + 1))), int(round(10 * pixel * (y + 1))))
+                
+                average = average_color(gray[start_point[1]:end_point[1], start_point[0]:end_point[0]])
+                                
+                cv2.putText(gray, str(average), (int(start_point[0]), int(start_point[1] + pixel*2.5)), cv2.FONT_HERSHEY_COMPLEX, 1.3, blue, 4)
+                
+                cv2.rectangle(gray, start_point, end_point, red, thickness)
+                #If the current square is white
+                if ((x + y) % 2 == 0):
+                    #cv2.putText(gray, str(average), (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, 1, blue, 4)
+                    white_square_ref += average
+                    empty_white_count += 1
+                #If the current square is black
+                else:
+                    #cv2.putText(gray, str(average), (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, 1, blue, 4)
+                    black_square_ref += average
+                    empty_black_count += 1
+    
+    #print(empty_black_count, empty_white_count)
+    
+    white_square_ref = white_square_ref / empty_white_count
+    black_square_ref = black_square_ref / empty_black_count
+        
+    #print(white_square_ref, black_square_ref)
+    
+    percentange = 0.1
+    
+    white_square_ref_lower = white_square_ref * (1 - percentange)
+    white_square_ref_higher = white_square_ref * (1 + percentange)
+    black_square_ref_lower = black_square_ref * (1 - percentange)
+    black_square_ref_higher = black_square_ref * (1 + percentange)
+    
+    #print(white_square_ref_lower, white_square_ref_higher, black_square_ref_lower, black_square_ref_higher)
+        
+    for y in range(8):
+        for x in range(8):
+            #If current square is occupied
+            if (detection_array[y][x] == 1):
+                start_point = (int(round(2 * pixel + 10 * pixel * x)), int(round(2 * pixel + 10 * pixel * y)))
+                end_point = (int(round(10 * pixel * (x + 1))), int(round(10 * pixel * (y + 1))))
+                square = gray[start_point[1]:end_point[1], start_point[0]:end_point[0]]
+                #If the current square is white
+                if ((x + y) % 2 == 0):
+                    square_mask = cv2.inRange(square, white_square_ref_lower, white_square_ref_higher)
+                    output = cv2.bitwise_and(square, square, mask = cv2.bitwise_not(square_mask))
+                    gray[start_point[1]:end_point[1], start_point[0]:end_point[0]] = output
+                    
+                    color_array[y][x] = average_color(output)
+                    
+                    cv2.putText(gray, str(average_color(output)), (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, 1.3, blue, 4)
+                    #if (color_array[y][x] > white_square_ref):
+                        #cv2.putText(gray, 'over', (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, 1.3, blue, 4)
+                    #elif (color_array[y][x] < white_square_ref):
+                        #cv2.putText(gray, 'under', (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, 1.3, blue, 4)
+                #If the current square is black
+                else:
+                    square_mask = cv2.inRange(square, black_square_ref_lower, black_square_ref_higher)
+                    output = cv2.bitwise_and(square, square, mask = cv2.bitwise_not(square_mask))
+                    gray[start_point[1]:end_point[1], start_point[0]:end_point[0]] = output
+                    
+                    color_array[y][x] = average_color(output)
+                    
+                    cv2.putText(gray, str(average_color(output)), (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, 1.3, blue, 4)
+                    #if (color_array[y][x] > black_square_ref):
+                        #cv2.putText(gray, '', (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, 1.3, blue, 4)
+                    #elif (color_array[y][x] < black_square_ref):
+                        #cv2.putText(gray, '', (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, 1.3, blue, 4)
+        
+    minval = np.min(color_array[np.nonzero(color_array)])
+    maxval = np.max(color_array[np.nonzero(color_array)])
+    
+    boundary = (maxval + minval) / 2
+    
+    for y in range(8):
+        for x in range(8):
+            if (color_array[y][x] > 0):
+                if (color_array[y][x] < boundary):
+                    color_array[y][x] = 1
+                else:
+                    color_array[y][x] = 2
+        
+    print(color_array.astype(np.int64))
+    
     return gray, color_array
 
 def average_color(image):
-    if (len(image.shape) > 2):
-        average = [0] * 3
-        for color in range(image.shape[2]):
-            for y in range(image.shape[0]):
-                for x in range(image.shape[1]):
-                    average[color] += image[y][x][color]
-            average[color] = average[color] // (image.shape[0] * image.shape[1])
-    else:
-        average = 0
-        for y in range(image.shape[0]):
-            for x in range(image.shape[1]):
-                    average += image[y][x]
-            average = round(average / (image.shape[0] * image.shape[1]), 4)
-    #print(average)
-    return average
+    return round(np.average(image[np.nonzero(image)]), 4)
                 
 
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTIONS
@@ -225,7 +290,7 @@ def process_frame(frame):
     
     #Make copies of original image to keep the same for display 
     apriltagCorners, shifted, cropped, final = copy_image(frame, 4)
-            
+    
     #If 4 apriltags are seen (one in each 4 corners of chessboard), crop image and run detection
     if(len(detections) == 4):
         #Get values for the inside corners of each 4 apriltags
@@ -242,16 +307,6 @@ def process_frame(frame):
         
         gray, color_array = get_color_array(shifted, detection_array)
         
-    #Display output images
-    #show_images('resize', ('Original', frame), ('Perspective shifted', shifted), ('Labeled Image', final))
-    #show_images('resize', ('Final', final))
-
-    #Wait for use to press key
-    #cv2.waitKey(0)
-    
-    #Delete all image windows
-    #cv2.destroyAllWindows()
-    
     return detection_array, final, gray
 
 #-----------------------------------------CHESS MOVE FUNCTIONS
@@ -465,57 +520,35 @@ def print_board(window, board_array, square_size):
                 window.blit(board_array[x][y][0], board_array[x][y][1])
     pygame.display.flip()
 
-window, square_size = create_gui()
+#window, square_size = create_gui()
 
-board_array = create_board_array()
+#board_array = create_board_array()
 
-board = chess.Board()
+#board = chess.Board()
 
-print_board(window, board_array, square_size)
+#print_board(window, board_array, square_size)
 
-old_detection_array, final_image, gray = process_frame(cv2.imread('TestingImages/ItalianGame1.jpg'))
-show_images('resize', ('Final Move 1', final_image), ('Color Values Move 1', gray))
+begin = time.time()
+
+old_detection_array, piece_detection, gray = process_frame(cv2.imread('TestingImages/LightingTesting_cropped.jpg'))
+#show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
+show_images('resize', ('Color Values', gray))
+
+print(time.time() - begin)
+
 cv2.waitKey(0)
 
-for i in range(2, 7):
-    new_detection_array, final_image, gray = process_frame(cv2.imread('TestingImages/ItalianGame' + str(i) + '.jpg'))
-    cv2.destroyAllWindows()
-    show_images('resize', ('Final Move '+str(i), final_image), ('Color Values Move '+str(i), gray))
-    move = detection_array_to_uci(old_detection_array, new_detection_array)
-    move = chess.Move.from_uci(move)
-    board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
-    board.push(move)
-    print_board(window, board_array, square_size)
-    old_detection_array = new_detection_array
-    
-    cv2.waitKey(0)
-
-time.sleep(2)
-
-#new_detection_array = picture_method('TestingImages/ItalianGame_CaptureTesting1.jpg')
-#detection_array_to_uci(old_detection_array, new_detection_array)
-#old_detection_array = new_detection_array
-
-#new_detection_array = picture_method('TestingImages/ItalianGame_CaptureTesting2.jpg')
-#detection_array_to_uci(old_detection_array, new_detection_array)
-#old_detection_array = new_detection_array
-
-#new_detection_array = picture_method('TestingImages/ItalianGame_CaptureTesting3.jpg')
-#detection_array_to_uci(old_detection_array, new_detection_array)
-#old_detection_array = new_detection_array
-
-#new_detection_array = picture_method('TestingImages/ItalianGame_CaptureTesting4.jpg')
-#detection_array_to_uci(old_detection_array, new_detection_array)
-#old_detection_array = new_detection_array
-
-#new_detection_array = picture_method('TestingImages/ItalianGame_CaptureTesting5.jpg')
-#detection_array_to_uci(old_detection_array, new_detection_array)
-#old_detection_array = new_detection_array
-
-#new_detection_array = picture_method('TestingImages/ItalianGame_CaptureTesting6.jpg')
-#detection_array_to_uci(old_detection_array, new_detection_array)
-#old_detection_array = new_detection_array
-
-#new_detection_array = picture_method('TestingImages/ItalianGame_CaptureTesting7.jpg')
-#detection_array_to_uci(old_detection_array, new_detection_array)
-#old_detection_array = new_detection_array
+#for i in range(2, 13):
+#    new_detection_array, piece_detection, gray = process_frame(cv2.imread('TestingImages/ItalianGame' + str(i) + '.jpg'))
+#    #cv2.destroyAllWindows()
+#    show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
+#    #move = detection_array_to_uci(old_detection_array, new_detection_array)
+#    #move = chess.Move.from_uci(move)
+#    #board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
+#    #board.push(move)
+#    #print_board(window, board_array, square_size)
+#    old_detection_array = new_detection_array
+#    
+#    cv2.waitKey(0)
+#
+#time.sleep(2)
