@@ -53,7 +53,7 @@ cv2.destroyAllWindows()
 radius = 10
 
 #imagepath = 'aprilTagImageBorders.jpg'
-imagepath = 'chessboardAprilTag.jpg'
+imagepath = '/home/blemay360/vision.jpg'
 image = cv2.imread(imagepath)
 
 gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
@@ -62,7 +62,8 @@ detector = apriltag("tag36h11")
 
 detections = detector.detect(gray_img)
 
-print(detections[0]['lb-rb-rt-lt'][1])
+#print(detections[0]['lb-rb-rt-lt'][1])
+print(detections)
 
 for i in range(len(detections)):
     center_coordinates = (int(round(detections[i]["center"][0])), int(round(detections[i]["center"][1])))
