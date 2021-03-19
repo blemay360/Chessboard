@@ -7,7 +7,6 @@ from apriltag import apriltag
 
 '''
 -----------------------------------------TO DO--------------------------------------------------
-Fix pygame window overwrite
 Test error detection for get_detection_array 
     Take off two pieces at once
     Add an extra piece
@@ -793,10 +792,20 @@ def main():
     turn_background = [16, 16, 0]
     #[# of white pieces on board, # of black pieces on board, 0=black just moved | 1=white just moved]
 
-    #Read the first frame in and save the color array as old to compare with the second frame later
-    old_color_array, piece_detection, gray = process_frame(cv2.imread('TestingImages/Flash/1.jpg'), turn_background)
+    #Read the first frame in
+    input_image = cv2.imread('TestingImages/Flash/1.jpg')
+    #Save the color array as old to compare with the second frame later
+    old_color_array, piece_detection, gray = process_frame(input_image, turn_background)
     #Show the grayscale color detection image and piece detection image
     show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
+    
+    #Set the window to be able to be resized
+    cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+    #Resize the window to 700 by 700 pixels
+    cv2.resizeWindow("Input Image", 400,400)
+    #Show the image
+    cv2.imshow("Input Image", input_image)
+    
     #Wait for a keypress while updating the chessboard gui
     while (cv2.waitKey(100) != -1):
         print_board(window, board_array, square_size)
@@ -807,8 +816,18 @@ def main():
         start = time.time()
         #Update the variable of which side just went
         turn_background[2] = 1 - (i % 2)
-        #Read and process the current frame
-        new_color_array, piece_detection, gray = process_frame(cv2.imread('TestingImages/Flash/' + str(i) + '.jpg'), turn_background)
+        #Read the current frame
+        input_image = cv2.imread('TestingImages/Flash/' + str(i) + '.jpg')
+        #Process the current frame
+        new_color_array, piece_detection, gray = process_frame(input_image, turn_background)
+        
+        #Set the window to be able to be resized
+        cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+        #Resize the window to 700 by 700 pixels
+        cv2.resizeWindow("Input Image", 400,400)
+        #Show the image
+        cv2.imshow("Input Image", input_image)
+        
         #Show the grayscale color detection image and piece detection image for the current image
         show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
         #Compare the color detection array of the current image with the last image to deterime the move that was made

@@ -187,6 +187,37 @@ def print_board(window, board_array, square_size):
                 window.blit(board_array[x][y][0], board_array[x][y][1])
     pygame.display.flip()
 
+def take_input(pygame, window, board_array, square_size, board):
+    global done
+    valid = False
+    while not valid:
+        complete = False
+        move = ''
+        while not complete and not done:
+            print_board(window, board_array, square_size)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    done = True
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        complete = True
+                        print()
+                    else:
+                        move += chr(event.key)
+                        print(chr(event.key), end='')
+                    
+        if done:
+            break
+        try:
+            white_move = board.parse_san(move)
+        except ValueError:
+            print('ValueError, try again')
+        else:
+            valid = True
+    if not done:
+        return white_move
+
+
 window, square_size = create_gui()
 
 board_array = create_board_array()
@@ -195,37 +226,25 @@ board = chess.Board()
 
 print_board(window, board_array, square_size)
 
-engine = chess.engine.SimpleEngine.popen_uci("/home/blemay360/Documents/stockfish_13_linux_x64/stockfish_13_linux_x64")
+difficulty = 1000
 
+engines = [[968, "feeks-master/main.py"], [1198, "belofte64-2.1.1"], [3717, "stockfish_13_linux_x64"]]
+print(min([i[0] for i in engines], key = lambda x: abs(x-difficulty)))
+engine = chess.engine.SimpleEngine.popen_uci("/home/blemay360/Documents/chessboard-main/Engines/feeks-master/main.py")
 done = False
 
-while not board.is_game_over() and not done:
-    #white_move = chess.Move.from_uci(input())
+while not board.is_game_over() and not done:    
+    white_move = take_input(pygame, window, board_array, square_size, board)
     
-    #valid = False
-    #while not valid:
-        #try:
-            #white_move = board.parse_san(input())
-        #except ValueError:
-            #print('ValueError, try again')
-        #else:
-            #valid = True
-    #board_array = update_board_array_uci(board, board_array, chess.Move.uci(white_move))
-    #board.push(white_move)
-    #print_board(window, board_array, square_size)
+    if done:
+        break
     
-    #result = engine.play(board, chess.engine.Limit(time=0.01), chess.engine.Info(Info.ALL))
-    result = engine.play(board, chess.engine.Limit(time=0.01))
+    board_array = update_board_array_uci(board, board_array, chess.Move.uci(white_move))
+    board.push(white_move)
+    print_board(window, board_array, square_size)
+    
+    result = engine.play(board, chess.engine.Limit(time=1))
     board_array = update_board_array_uci(board, board_array, chess.Move.uci(result.move))
-    #board_array = refresh_board_array(board)
     board.push(result.move)
-    i = 0
-    while not done and i < 9:
-        print_board(window, board_array, square_size)
-        time.sleep(0.1)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                done = True
-        i += 1
-
+        
 engine.quit()

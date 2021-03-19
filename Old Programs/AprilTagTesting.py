@@ -1,4 +1,4 @@
-import cv2
+import cv2, imutils
 import numpy as np
 from apriltag import apriltag
 
@@ -53,12 +53,14 @@ cv2.destroyAllWindows()
 radius = 10
 
 #imagepath = 'aprilTagImageBorders.jpg'
-imagepath = '/home/blemay360/vision.jpg'
+imagepath = '/media/blemay360/1EB8-1359/on_four_wot.jpg'
 image = cv2.imread(imagepath)
+
+image = imutils.rotate(image, 180)
 
 gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
 
-detector = apriltag("tag36h11")
+detector = apriltag("tagStandard41h12")
 
 detections = detector.detect(gray_img)
 
