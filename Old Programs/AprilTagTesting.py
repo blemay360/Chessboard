@@ -17,11 +17,11 @@ thickness = -1
 # Radius of circle
 radius = 3
 
-cap = cv2.VideoCapture(0)
+#cap = cv2.VideoCapture(0)
 
 print('Switch to images. Then press q key to stop')
 
-while True:
+while False:
     [ok, frame] = cap.read()
 
     gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
@@ -52,15 +52,16 @@ cv2.destroyAllWindows()
 # Radius of circle
 radius = 10
 
+imagepath = '/home/pi/Pictures/18in.jpg'
 #imagepath = 'aprilTagImageBorders.jpg'
-imagepath = '/media/blemay360/1EB8-1359/on_four_wot.jpg'
+#imagepath = '/home/blemay360/1EB8-1359/on_four_wot.jpg'
 image = cv2.imread(imagepath)
 
 image = imutils.rotate(image, 180)
 
 gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
 
-detector = apriltag("tagStandard41h12")
+detector = apriltag("tag36h11")
 
 detections = detector.detect(gray_img)
 
@@ -75,7 +76,8 @@ for i in range(len(detections)):
     image = cv2.circle(image, center_coordinates, radius, color, thickness)
 
 cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-cv2.resizeWindow('image', 800,1200)
+#cv2.resizeWindow('image', 800,1200)
+cv2.resizeWindow('image', 200, 200)
 
 cv2.imshow("image", image)
 
