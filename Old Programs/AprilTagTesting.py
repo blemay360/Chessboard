@@ -52,32 +52,36 @@ cv2.destroyAllWindows()
 # Radius of circle
 radius = 10
 
-imagepath = '/home/pi/Pictures/18in.jpg'
+#imagepath = '/home/pi/Pictures/18in.jpg'
 #imagepath = 'aprilTagImageBorders.jpg'
 #imagepath = '/home/blemay360/1EB8-1359/on_four_wot.jpg'
+imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/16bitApriltagsCutout.jpg'
 image = cv2.imread(imagepath)
 
 image = imutils.rotate(image, 180)
 
 gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
 
-detector = apriltag("tag36h11")
+detector = apriltag("tag16h5")
 
 detections = detector.detect(gray_img)
 
 #print(detections[0]['lb-rb-rt-lt'][1])
 print(detections)
 
+colors = {0:(255, 0, 255), 1:(0, 0, 255), 2:(0, 255, 0), 3:(255, 0, 0)}
+
 for i in range(len(detections)):
-    center_coordinates = (int(round(detections[i]["center"][0])), int(round(detections[i]["center"][1])))
-  
-    # Using cv2.circle() method
-    # Draw a circle with blue line borders of thickness of 2 px
-    image = cv2.circle(image, center_coordinates, radius, color, thickness)
+    if (detections[i]['margin'] > 50):
+        center_coordinates = (int(round(detections[i]["lb-rb-rt-lt"][0][0])), int(round(detections[i]["lb-rb-rt-lt"][0][1])))
+    
+        # Using cv2.circle() method
+        # Draw a circle with blue line borders of thickness of 2 px
+        image = cv2.circle(image, center_coordinates, radius, colors[i], thickness)
 
 cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-#cv2.resizeWindow('image', 800,1200)
-cv2.resizeWindow('image', 200, 200)
+cv2.resizeWindow('image', 800,1200)
+#cv2.resizeWindow('image', 200, 200)
 
 cv2.imshow("image", image)
 

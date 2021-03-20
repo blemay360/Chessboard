@@ -1,17 +1,27 @@
-# Importing the OpenCV library 
+#Variables to change stuff on a high level
+#Whether code is being run on the pi
+pi = False
+#Whether to display the input image
+display_input = False
+#Which apriltags should be looked for
+#Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
+tag_family = 'tag36h11'
+#Whether to wait for a keypress on each image or not
+wait = False
+
+#Importing needed libraries
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
 import chess, time, pygame, chess.engine, cv2, copy, math
 import numpy as np
 from apriltag import apriltag
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+if pi:
+    from picamera.array import PiRGBArray
+    from picamera import PiCamera
 
 '''
 -----------------------------------------TO DO--------------------------------------------------
-Test on pi
-Adapt display sizes to work automatically on laptop or pi
 Test error detection for get_detection_array 
     Take off two pieces at once
     Add an extra piece
@@ -150,24 +160,25 @@ def show_images(*arg):
     '''
     #If the images are very large and need to be resized
     if (arg[0] == 'resize'):
-        #Iterate through each image, skipping the first argument
-        for i in range(1, len(arg)):
-            #Set the window to be able to be resized
-            cv2.namedWindow(arg[i][0], cv2.WINDOW_NORMAL)
-            #Resize the window to 700 by 700 pixels
-            cv2.resizeWindow(arg[i][0], 700,700)
-            #Show the image
-            cv2.imshow(arg[i][0], arg[i][1])
-    #If displaying on the pi
-    elif (arg[0] == 'pi'):
-        #Iterate through each image, skipping the first argument
-        for i in range(1, len(arg)):
-            #Set the window to be able to be resized
-            cv2.namedWindow(arg[i][0], cv2.WINDOW_NORMAL)
-            #Resize the window to 200 by 200 pixels
-            cv2.resizeWindow(arg[i][0], 200,200)
-            #Show the image
-            cv2.imshow(arg[i][0], arg[i][1])
+        #If displaying on the pi
+        if pi:
+            #Iterate through each image, skipping the first argument
+            for i in range(1, len(arg)):
+                #Set the window to be able to be resized
+                cv2.namedWindow(arg[i][0], cv2.WINDOW_NORMAL)
+                #Resize the window to 200 by 200 pixels
+                cv2.resizeWindow(arg[i][0], 200,200)
+                #Show the image
+                cv2.imshow(arg[i][0], arg[i][1])
+        else:
+            #Iterate through each image, skipping the first argument
+            for i in range(1, len(arg)):
+                #Set the window to be able to be resized
+                cv2.namedWindow(arg[i][0], cv2.WINDOW_NORMAL)
+                #Resize the window to 700 by 700 pixels
+                cv2.resizeWindow(arg[i][0], 700,700)
+                #Show the image
+                cv2.imshow(arg[i][0], arg[i][1])
     #If the images should be displayed as is
     else:
         #Cycle through all the images
@@ -214,8 +225,11 @@ def get_detection_array(image, turn_background):
     empty_color = (0, 255, 0)
     #Rectangle color for filled squares
     occupied_color = (0, 0, 255)
-    #Thickness of the rectangle lines
-    thickness = 1
+    #Set thickness of the rectangle lines
+    if pi:
+        thickness = 1
+    else:
+        thickness = 6
     
     #Size of the input image, assumed to be a square because the input image should be perspective shifted
     size = detected_image.shape[0]
@@ -243,7 +257,7 @@ def get_detection_array(image, turn_background):
             detected_image[start_point[1]:end_point[1], start_point[0]:end_point[0]], edge_count[y][x] = edge_detection(detected_image[start_point[1]:end_point[1], start_point[0]:end_point[0]])            
             
             #If the edge count of the square exceeds 50000 the square is deemed occupied
-            if (edge_count[y][x] > 100):
+            if (edge_count[y][x] > 50000):
                 #Add a rectangle of the appropriate color to the output image
                 detected_image = cv2.rectangle(detected_image, start_point, end_point, occupied_color, thickness)
                 #Mark the square as occupied in the output array
@@ -270,7 +284,7 @@ def edge_detection(image):
     #Blur the image to get rid of noise and bad edge measurements
     blurred = cv2.medianBlur(image,3)
     #Perform edge measurement
-    edges = cv2.Canny(image,5,10)
+    edges = cv2.Canny(blurred,80,100)
     #Copy edge detection image 3 times so it can replace a section of a 3 channel image
     edges = np.stack((edges,)*3, axis=-1)
     
@@ -290,10 +304,20 @@ def get_color_array(image, detection_array, turn_background):
     #Calculate the size of a scaled up pixel from the chessboard (not the size of a pixel in the image)
     pixel = size / 82
     
-    #Size of text to add to image
-    text_size = 0.25
-    #Thickness of text to add to image
-    text_thickness = 1
+    if pi:
+        #Size of text to add to image
+        text_size = 0.25
+        #Thickness of text to add to image
+        text_thickness = 1
+        #Thickness of lines to draw on image
+        line_thickness = 1
+    else:
+        #Size of text to add to image
+        text_size = 1.5
+        #Thickness of text to add to image
+        text_thickness = 4
+        #Thickness of lines to draw on image
+        line_thickness = 6
     
     #Initialize an array to store the average color value for each square
     color_array = np.zeros((8, 8), dtype=float)
@@ -325,7 +349,7 @@ def get_color_array(image, detection_array, turn_background):
                 cv2.putText(gray, str(round(average, 1)), (int(start_point[0]), int(start_point[1] + pixel*2.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
                 
                 #Draw a rectangle around the rectangle in which color is measured for this square
-                cv2.rectangle(gray, start_point, end_point, 255, 1)
+                cv2.rectangle(gray, start_point, end_point, 255, line_thickness)
                 
                 #If the current square is white
                 if ((x + y) % 2 == 0):
@@ -445,7 +469,7 @@ def process_frame(frame, turn_background):
         frame = frame[start_point[1]:end_point[1], start_point[0]:end_point[0]]
     
     #Run apriltag detection on image
-    detections = detect_apriltags("tag36h11", frame)
+    detections = detect_apriltags(tag_family, frame)
     
     #If not all 4 apriltags are detected
     if (len(detections) != 4):
@@ -453,13 +477,16 @@ def process_frame(frame, turn_background):
             #Revert back to the original frame
             frame = input_frame
             #Run apriltag detection again
-            detections = detect_apriltags("tag36h11", frame)
+            detections = detect_apriltags(tag_family, frame)
         else:
             print("Missing an apriltag'")
             #Set the window to be able to be resized
             cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-            #Resize the window to 700 by 700 pixels
-            cv2.resizeWindow("Input Image", 200,200)
+            #Resize the window
+            if pi:
+                cv2.resizeWindow("Input Image", 200, 200)
+            else:
+                cv2.resizeWindow("Input Image", 700, 700)
             #Show the image
             cv2.imshow("Input Image", frame)
             #Wait for a keypress
@@ -499,12 +526,13 @@ def process_frame(frame, turn_background):
 def create_board_array():
     '''
     Function to create an array of chess pieces in the starting configuration
-    Each element has an svg file icon for the piece, the location of that icon on the chessboard, and the character representation of the piece
+    Each element has an bmp file icon for the piece, the location of that icon on the chessboard, and the character representation of the piece
     Takes no input
     Returns the board array
     '''
     #List of filenames to use, the order corresponds to the piece_dict dictionary
-    filenames = ['Icons/rook_black.bmp', 
+    if pi:
+        filenames = ['Icons/rook_black.bmp', 
                  'Icons/knight_black.bmp', 
                  'Icons/bishop_black.bmp', 
                  'Icons/queen_black.bmp', 
@@ -516,8 +544,24 @@ def create_board_array():
                  'Icons/bishop_white.bmp', 
                  'Icons/queen_white.bmp', 
                  'Icons/king_white.bmp']
+    else:
+        filenames = ['Icons/rook_black.svg', 
+                 'Icons/knight_black.svg', 
+                 'Icons/bishop_black.svg', 
+                 'Icons/queen_black.svg', 
+                 'Icons/king_black.svg', 
+                 'Icons/pawn_black.svg', 
+                 'Icons/pawn_white.svg', 
+                 'Icons/rook_white.svg', 
+                 'Icons/knight_white.svg', 
+                 'Icons/bishop_white.svg', 
+                 'Icons/queen_white.svg', 
+                 'Icons/king_white.svg']
     #Dictionary for converting the character representation of each piece to the filename of that piece icon
     piece_dict = {'r':0, 'n':1, 'b':2, 'q':3, 'k':4, 'p':5, 'P':6, 'R':7, 'N':8, 'B':9, 'Q':10, 'K':11}
+    #Dictionary for correct sizing of each icon
+    #Found by printing out the rectangle of each icon after importing then dividing by two
+    size_dict = {'r':(17, 21), 'n':(17, 22), 'b':(17, 22), 'q':(21, 22), 'k':(20, 22), 'p':(17, 21), 'P':(17, 21), 'R':(17, 21), 'N':(17, 22), 'B':(17, 22), 'Q':(21, 22), 'K':(20, 22)}
     
     #Get the starting position of a chessboard in fen format, then at each '/', yielding a list of 8 elements for each rank of the board
     position = chess.STARTING_BOARD_FEN.split('/')
@@ -534,7 +578,8 @@ def create_board_array():
                 #Load the icon into the first element by referencing the piece_dict to convert character to filename
                 board_array[x][y][0] = pygame.image.load(filenames[piece_dict[position[y][x]]])
                 #Scale icon to fit with pi screen
-                board_array[x][y][0] = pygame.transform.scale(board_array[x][y][0], (20, 22))
+                if pi:
+                    board_array[x][y][0] = pygame.transform.scale(board_array[x][y][0], size_dict[position[y][x]])
                 #Place the rectangle location in the second element
                 board_array[x][y][1] = board_array[x][y][0].get_rect()
                 #Put the string representation of the piece in the third element
@@ -592,50 +637,52 @@ def update_board_array_uci(board, board_array, uci):
         board_array[0][0] = (None, None, None)
     #Promotion
     elif (len(uci) == 5):
-        #White pieces
+        #List of filenames to use, the order corresponds to the piece_dict dictionary
+        if pi:
+            filenames = ['Icons/rook_black.bmp', 
+                    'Icons/knight_black.bmp', 
+                    'Icons/bishop_black.bmp', 
+                    'Icons/queen_black.bmp', 
+                    'Icons/king_black.bmp', 
+                    'Icons/pawn_black.bmp', 
+                    'Icons/pawn_white.bmp', 
+                    'Icons/rook_white.bmp', 
+                    'Icons/knight_white.bmp', 
+                    'Icons/bishop_white.bmp', 
+                    'Icons/queen_white.bmp', 
+                    'Icons/king_white.bmp']
+        else:
+            filenames = ['Icons/rook_black.svg', 
+                    'Icons/knight_black.svg', 
+                    'Icons/bishop_black.svg', 
+                    'Icons/queen_black.svg', 
+                    'Icons/king_black.svg', 
+                    'Icons/pawn_black.svg', 
+                    'Icons/pawn_white.svg', 
+                    'Icons/rook_white.svg', 
+                    'Icons/knight_white.svg', 
+                    'Icons/bishop_white.svg', 
+                    'Icons/queen_white.svg', 
+                    'Icons/king_white.svg']
+        #Dictionary for converting the character representation of each piece to the filename of that piece icon
+        piece_dict = {'r':0, 'n':1, 'b':2, 'q':3, 'k':4, 'p':5, 'P':6, 'R':7, 'N':8, 'B':9, 'Q':10, 'K':11}
+        #Dictionary for correct sizing of each icon
+        #Found by printing out the rectangle of each icon after importing then dividing by two
+        size_dict = {'r':(17, 21), 'n':(17, 22), 'b':(17, 22), 'q':(21, 22), 'k':(20, 22), 'p':(17, 21), 'P':(17, 21), 'R':(17, 21), 'N':(17, 22), 'B':(17, 22), 'Q':(21, 22), 'K':(20, 22)}
+        
+        #White pieces are capitalized
         if (destination[1] == 0):
-            #Queen promotion
-            if (uci[4] == 'q'):
-                board_array[destination[0]][destination[1]][0] = pygame.image.load('Icons/queen_white.svg')
-                board_array[destination[0]][destination[1]][1] = board_array[destination[0]][destination[1]][0].get_rect()
-                board_array[destination[0]][destination[1]][2] = 'Q'
-            #Rook promotion
-            elif (uci[4] == 'r'):
-                board_array[destination[0]][destination[1]][0] = pygame.image.load('Icons/rook_white.svg')
-                board_array[destination[0]][destination[1]][1] = board_array[destination[0]][destination[1]][0].get_rect()
-                board_array[destination[0]][destination[1]][2] = 'R'
-            #Knight promotion
-            elif (uci[4] == 'n'):
-                board_array[destination[0]][destination[1]][0] = pygame.image.load('Icons/knight_white.svg')
-                board_array[destination[0]][destination[1]][1] = board_array[destination[0]][destination[1]][0].get_rect()
-                board_array[destination[0]][destination[1]][2] = 'N'
-            #Bishop promotion
-            elif (uci[4] == 'b'):
-                board_array[destination[0]][destination[1]][0] = pygame.image.load('Icons/bishop_white.svg')
-                board_array[destination[0]][destination[1]][1] = board_array[destination[0]][destination[1]][0].get_rect()
-                board_array[destination[0]][destination[1]][2] = 'B'
-        #Black pieces
+            piece = uci[4].upper
+        #Black pieces are lowercase, just like the notation already is
         elif (destination[1] == 7):
-            #Queen promotion
-            if (uci[4] == 'q'):
-                board_array[destination[0]][destination[1]][0] = pygame.image.load('Icons/queen_black.svg')
-                board_array[destination[0]][destination[1]][1] = board_array[destination[0]][destination[1]][0].get_rect()
-                board_array[destination[0]][destination[1]][2] = 'q'
-            #Rook promotion
-            elif (uci[4] == 'r'):
-                board_array[destination[0]][destination[1]][0] = pygame.image.load('Icons/rook_black.svg')
-                board_array[destination[0]][destination[1]][1] = board_array[destination[0]][destination[1]][0].get_rect()
-                board_array[destination[0]][destination[1]][2] = 'r'
-            #Knight promotion
-            elif (uci[4] == 'n'):
-                board_array[destination[0]][destination[1]][0] = pygame.image.load('Icons/knight_black.svg')
-                board_array[destination[0]][destination[1]][1] = board_array[destination[0]][destination[1]][0].get_rect()
-                board_array[destination[0]][destination[1]][2] = 'n'
-            #Bishop promotion
-            elif (uci[4] == 'b'):
-                board_array[destination[0]][destination[1]][0] = pygame.image.load('Icons/bishop_black.svg')
-                board_array[destination[0]][destination[1]][1] = board_array[destination[0]][destination[1]][0].get_rect()
-                board_array[destination[0]][destination[1]][2] = 'b'
+            piece = uci[4]
+        
+        #Load in image for newly promoted piece
+        board_array[destination[0]][destination[1]][0] = pygame.image.load(filenames[piece_dict[piece]])
+        #Get size and location variable for the new image
+        board_array[destination[0]][destination[1]][1] = board_array[destination[0]][destination[1]][0].get_rect()
+        #Update the board_array character of the piece
+        board_array[destination[0]][destination[1]][2] = piece
         #Replace move origin square with empty space
         board_array[origin[0]][origin[1]] = (None, None, None)
     #If the move is en passant
@@ -749,14 +796,20 @@ def create_gui():
     '''
     #Initialize an instance of pygame
     pygame.init()
-    #Set the square size to 70 pixels
-    square_size = 40
+    
+    #The pi screen is smaller and needs different sizing
+    if pi:
+        #Set square size to 40 pixels
+        square_size = 40
+    else:
+        #Set square size to 70 pixels
+        square_size = 70
     #Set the size of the window to 8 squares by 8 squares
     window = pygame.display.set_mode((square_size * 8, square_size * 8))
     #Set the window name to Chessboard
     pygame.display.set_caption('Chessboard')
     #Load in an icon of a knight
-    icon=pygame.image.load('Icons/icon.png')
+    icon=pygame.image.load('Icons/icon.bmp')
     #Set the window icon
     pygame.display.set_icon(icon)
     #Draw a grid on the window
@@ -826,79 +879,118 @@ def main():
     #Initialize a variable to keep track of how many white and black pieces are on the board, and which side just moved
     turn_background = [16, 16, 0]
     #[# of white pieces on board, # of black pieces on board, 0=black just moved | 1=white just moved]
-
-    # initialize the camera and grab a reference to the raw camera capture
-    camera = PiCamera()
-    camera.resolution = (1024, 768)
-    rawCapture = PiRGBArray(camera)
-    # allow the camera to warmup
-    time.sleep(0.1)
-    # grab an image from the camera
-    camera.capture(rawCapture, format="bgr")
-    input_image = rawCapture.array
-
-    #Read the first frame in
-    #input_image = cv2.imread('TestingImages/Flash/1.jpg')
+    
+    if pi:
+        #Initialize the camera and grab a reference to the raw camera capture
+        camera = PiCamera()
+        camera.resolution = (1024, 768)
+        rawCapture = PiRGBArray(camera)
+        #Allow the camera to warmup
+        time.sleep(0.1)
+        #Grab an image from the camera
+        camera.capture(rawCapture, format="bgr")
+        input_image = rawCapture.array
+    else:
+        #Read the first frame in
+        input_image = cv2.imread('TestingImages/StandardSeries/1.jpg')
+        
+    if display_input:
+            #Set the window to be able to be resized
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            #Resize the window
+            if pi:
+                cv2.resizeWindow("Input Image", 200,200)
+            else:
+                cv2.resizeWindow("Input Image", 700,700)
+            #Show the image
+            cv2.imshow("Input Image", input_image)
+            #Pause until user presses a key
+            cv2.waitKey(10)
     
     #Save the color array as old to compare with the second frame later
     old_color_array, piece_detection, gray = process_frame(input_image, turn_background)
     #Show the grayscale color detection image and piece detection image
-    show_images('pi', ('Color Values', gray), ('Piece Detection', piece_detection))
+    show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
     
-    #Wait for a keypress while updating the chessboard gui
-    while (cv2.waitKey(100) == -1):
-        print_board(window, board_array, square_size)
+    if wait:
+        #Wait for a keypress while updating the chessboard gui
+        while (cv2.waitKey(100) == -1):
+            print_board(window, board_array, square_size)
+    else:
+        #Don't wait for a keypress
+        cv2.waitKey(1)
 
-    #For each image in the Flash folder
-    #for i in range(2, 36):
-    counter = 0
-    while True:
+    run = True
+
+    counter = 2
+    while run:
         #Start a timer to measure processing time for the current frame
         start = time.time()
         #Update the variable of which side just went
         turn_background[2] = 1 - (counter % 2)
-        print(turn_background)
+        
         #Read the current frame
-        #input_image = cv2.imread('TestingImages/Flash/' + str(i) + '.jpg')
-        rawCapture = PiRGBArray(camera)
-        # allow the camera to warmup
-        time.sleep(0.1)
-        camera.capture(rawCapture, format="bgr")
-        input_image = rawCapture.array
+        if pi:
+            rawCapture = PiRGBArray(camera)
+            # allow the camera to warmup
+            time.sleep(0.1)
+            camera.capture(rawCapture, format="bgr")
+            input_image = rawCapture.array
+        else:
+            input_image = cv2.imread('TestingImages/StandardSeries/' + str(counter) + '.jpg')
+        
         #Process the current frame
         new_color_array, piece_detection, gray = process_frame(input_image, turn_background)
         
-        #Set the window to be able to be resized
-        #cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-        #Resize the window to 700 by 700 pixels
-        #cv2.resizeWindow("Input Image", 400,400)
-        #Show the image
-        #cv2.imshow("Input Image", input_image)
+        if display_input:
+            #Set the window to be able to be resized
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            #Resize the window
+            if pi:
+                cv2.resizeWindow("Input Image", 200,200)
+            else:
+                cv2.resizeWindow("Input Image", 700,700)
+            #Show the image
+            cv2.imshow("Input Image", input_image)
         
         #Show the grayscale color detection image and piece detection image for the current image
-        show_images('pi', ('Color Values', gray), ('Piece Detection', piece_detection))
+        show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
         #Compare the color detection array of the current image with the last image to deterime the move that was made
         move = color_array_to_uci(old_color_array, new_color_array, board)
-        #Compute the move variable using the chess library
-        #move = chess.Move.from_uci(move)
-        #If the move wasn't legal
-        #if not (move in board.legal_moves):
-            #Print the move wasn't legal
-            #print("Not legal")
-        #Update the board array to reflect the move that was just made
-        #board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
-        #Push the move to the board
-        #board.push(move)
-        #Update the chessboard gui
-        #print_board(window, board_array, square_size)
-        #Replace the old color array with the current color array to prepare for the next frame
-        #old_color_array = new_color_array
+        
+        if not pi:
+            #Compute the move variable using the chess library
+            move = chess.Move.from_uci(move)
+            #If the move wasn't legal
+            if not (move in board.legal_moves):
+                #Print the move wasn't legal
+                print("Not legal")
+            #Update the board array to reflect the move that was just made
+            board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
+            #Push the move to the board
+            board.push(move)
+            #Update the chessboard gui
+            print_board(window, board_array, square_size)
+            #Replace the old color array with the current color array to prepare for the next frame
+            old_color_array = new_color_array
+        
         #Print the move that was made and the time it took to process the frame
         print(move, time.time() - start)
-        #Wait for a keypress while updating the chessboard gui
-        while (cv2.waitKey(100) == -1):
-            print_board(window, board_array, square_size)
+        
+        if wait:
+            #Wait for a keypress while updating the chessboard gui
+            while (cv2.waitKey(100) == -1):
+                print_board(window, board_array, square_size)
+        else:
+            #Don't wait for a keypress
+            cv2.waitKey(1)
+        #Update counter to know we're on the next frame
         counter += 1
+        
+        #If it's running from images and finishes the last image
+        if (counter == 36) and not pi:
+            #Stop running the program
+            run = False
     
     #When all images have been processed, wait 2 seconds to allow the user to decompress before ending
     time.sleep(2)
