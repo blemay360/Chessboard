@@ -307,6 +307,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
                 detection_array[y][x] = 1
                 #Measure the average color of the piece
                 color_image[lt[1]:rb[1], lt[0]:rb[0]], color_array[y][x] = average_color(color_image[lt[1]:rb[1], lt[0]:rb[0]], x_average, y_average, std)
+                cv2.putText(color_image, str(color_array[y][x]), (int(lt[0]), int(lt[1] + pixel*0)), cv2.FONT_HERSHEY_COMPLEX, text_size, (255, 255, 255), text_thickness)
             #If the edge cound of the square is or is under edge_count_threshold, then the square is empty
             else:
                 #Add a rectangle of the appropriate color to the output image
@@ -334,7 +335,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
     
     #Dictionary for what to display on each square of the output image depending on its color_array value
     #color_ref = {0:"Empty", 1:"Black", 2:"White"}
-    color_ref = {0:(0, 255, 0), 1:(50, 50, 50), 2:(225, 225, 225)}
+    color_ref = {0:("Empty", (255, 255, 255)), 1:("Black", (150, 150, 150)), 2:("White", (255, 255, 255))}
     
     #Iterate through each rank (horizontal row)
     for y in range(8):
@@ -353,15 +354,12 @@ def get_detection_color_array(image, turn_background, first_frame=False):
                     #Label it black
                     color_array[y][x] = 1
                 if add_text_to_image:
-                    margin = 1
                     #Calculate the coordinates of the upper left corner of the rectangle to be measured
                     lt = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
-                    #Calculate the coordinates of the lower right corner off the rectange to be measured
-                    rb = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
                     #Label the current square with the determination of whether it is empty, or what color piece it has
                     #Add a rectangle of the appropriate color to the output image
-                    color_image = cv2.rectangle(color_image, lt, rb, color_ref[color_array[y][x]], int(pixel)*2)
-                    #cv2.putText(color_image, color_ref[color_array[y][x]], (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, (255, 255, 255), text_thickness)
+                    #color_image = cv2.rectangle(color_image, lt, rb, color_ref[color_array[y][x]], int(pixel)*2)
+                    cv2.putText(color_image, color_ref[color_array[y][x]][0], (int(lt[0]), int(lt[1] + pixel*7)), cv2.FONT_HERSHEY_COMPLEX, text_size, color_ref[color_array[y][x]][1], text_thickness)
     
     #print(edge_count)
     #print(detection_array)
@@ -576,7 +574,10 @@ def average_color(image, x, y, radius):
     cv2.circle(mask, (x, y), radius, (255, 255, 255), -1)
     #Create a new image called color_measure by only keeping the hue pixels that intersect with the white circle on the mask
     color_measure = np.stack((image[:,:,0]*mask,) * 3, axis=-1)
-    return color_measure, round(np.average(color_measure[np.nonzero(mask)]))
+    #Measure average color from nonzero pixels
+    color = round(np.average(color_measure[np.nonzero(mask)]))
+    
+    return color_measure, color
 
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTION
 def process_frame(frame, turn_background, first_frame=False):
