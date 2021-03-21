@@ -5,6 +5,8 @@ pi = False
 display_input = False
 #Whether to wait for a keypress on each image or not
 wait = True
+#Whether to play against a computer
+vs_comp = True
 #Which apriltags should be looked for
 #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
 tag_family = 'tag16h5'
@@ -997,23 +999,8 @@ def print_board(window, board_array, square_size):
     #Display the window
     pygame.display.flip()
 
-#-----------------------------------------MAIN FUNCTION
-def main():
-    #Create a gui to display the state of the chessboard, saving the window it creates and the size of each square in the chessboard for later functions
-    window, square_size = create_gui()
-
-    #Create a board array to keep track of the images displayed on the gui chessboard
-    board_array = create_board_array()
-
-    #Create a board variable to keep track of the game
-    board = chess.Board()
-
-    #Print the chessboard to the window
-    print_board(window, board_array, square_size)
-    
-    #Desired difficulty of the computer
-    difficulty = 900
-    
+#-----------------------------------------CHESS FUNCTIONS
+def open_engine(difficulty):
     if pi:
         #List of engine to use and their rankings
         engines = [[968, "feeks-master/main.py"], [1198, "belofte64-2.1.1"], [3717, "stockfish_13_linux_x64"]]
@@ -1034,41 +1021,69 @@ def main():
         print("Using engine " + engine_to_use[1] + " with a rating of " + str(engine_to_use[0]))
         #Open engine
         engine = chess.engine.SimpleEngine.popen_uci("/home/blemay360/Documents/chessboard-main/Engines/" + engine_to_use[1])
+    return engine
+
+#-----------------------------------------PI FUNCTIONS
+def setup_camera():
+    #Initialize the camera and grab a reference to the raw camera capture
+    camera = PiCamera()
+    #Set resolution
+    camera.resolution = (1024, 768)
+    return camera
+
+def pi_take_image(camera):
+    #Get raw capture from camera
+    #For some reason this works better calling this line everytime
+    rawCapture = PiRGBArray(camera)
+    #Allow the camera to warmup
+    time.sleep(0.1)
+    #Grab an image from the camera
+    camera.capture(rawCapture, format="bgr")
+    input_image = rawCapture.array
+    return input_image
+    
+#-----------------------------------------MAIN FUNCTION
+def main():
+    #Create a gui to display the state of the chessboard, saving the window it creates and the size of each square in the chessboard for later functions
+    window, square_size = create_gui()
+
+    #Create a board array to keep track of the images displayed on the gui chessboard
+    board_array = create_board_array()
+
+    #Create a board variable to keep track of the game
+    board = chess.Board()
+
+    #Print the chessboard to the window
+    print_board(window, board_array, square_size)
+    
+    #Desired difficulty of the computer
+    difficulty = 900
+     
+    #Find and open the desired engine for the difficulty
+    engine = open_engine(difficulty)
     
     #Initialize a variable to keep track of how many white and black pieces are on the board, and which side just moved
     turn_background = [16, 16, 0]
     #[# of white pieces on board, # of black pieces on board, 0=black just moved | 1=white just moved]
     
     if pi:
-        #Initialize the camera and grab a reference to the raw camera capture
-        camera = PiCamera()
-        camera.resolution = (1024, 768)
-        rawCapture = PiRGBArray(camera)
-        #Allow the camera to warmup
-        time.sleep(0.1)
-        #Grab an image from the camera
-        camera.capture(rawCapture, format="bgr")
-        input_image = rawCapture.array
+        #Set up camera
+        camera = setup_camera()
+        #Take an image from the camera
+        input_image = pi_take_image(camera)
     else:
         #Read the first frame in
-        #input_image = cv2.imread('TestingImages/StandardSeries/1.jpg')
         input_image = cv2.imread('TestingImages/LargeBoard/1.jpg')
         
     if display_input:
-            #Set the window to be able to be resized
-            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-            #Resize the window
-            if pi:
-                cv2.resizeWindow("Input Image", 200,200)
-            else:
-                cv2.resizeWindow("Input Image", 700,700)
-            #Show the image
-            cv2.imshow("Input Image", input_image)
+            #Show the input image
+            show_images('resize', ("Input Image", input_image))
             #Pause until user presses a key
             cv2.waitKey(10)
         
     #Save the color array as old to compare with the second frame later
     old_color_array, piece_detection, gray = process_frame(input_image, turn_background, True)
+    
     #Show the grayscale color detection image and piece detection image
     show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
         
@@ -1080,9 +1095,10 @@ def main():
         #Don't wait for a keypress
         cv2.waitKey(1)
 
+    #-----------------------------------------LOOP
     run = True
-
     counter = 2
+    right_move
     while run:
         #Start a timer to measure processing time for the current frame
         start = time.time()
@@ -1091,11 +1107,7 @@ def main():
         
         #Read the current frame
         if pi:
-            rawCapture = PiRGBArray(camera)
-            # allow the camera to warmup
-            time.sleep(0.1)
-            camera.capture(rawCapture, format="bgr")
-            input_image = rawCapture.array
+            input_image = pi_take_image(camera)
         else:
             input_image = cv2.imread('TestingImages/LargeBoard/' + str(counter) + '.jpg')
         
@@ -1103,27 +1115,37 @@ def main():
         new_color_array, piece_detection, gray = process_frame(input_image, turn_background)
         
         if display_input:
-            #Set the window to be able to be resized
-            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-            #Resize the window
-            if pi:
-                cv2.resizeWindow("Input Image", 200,200)
-            else:
-                cv2.resizeWindow("Input Image", 700,700)
-            #Show the image
-            cv2.imshow("Input Image", input_image)
+            #Show the input image
+            show_images('resize', ("Input Image", input_image))
         
         #Show the grayscale color detection image and piece detection image for the current image
         show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
-        #Compare the color detection array of the current image with the last image to deterime the move that was made
-        move = color_array_to_uci(old_color_array, new_color_array, board)
+        cv2.waitKey(wrong_move)
         
-        #Compute the move variable using the chess library
-        move = chess.Move.from_uci(move)
+        #Compare the color detection array of the current image with the last image to deterime the move that was made
+        if not np.array_equal(old_color_array, new_color_array):
+            move = color_array_to_uci(old_color_array, new_color_array, board)
+            #Compute the move variable using the chess library
+            move = chess.Move.from_uci(move)
+        else:
+            move = None
+            print("none")
+        
+        if vs_comp and (turn_background[2] == 0):
+            if (move == result.move):
+                print("Good job")
+                right_move = 1
+            else:
+                print("Wrong move")
+                right_move = 0
+                continue
+        
         #If the move wasn't legal
         if not (move in board.legal_moves):
             #Print the move wasn't legal
             print("Not legal")
+            continue
+        
         #Update the board array to reflect the move that was just made
         board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
         #Push the move to the board
@@ -1135,6 +1157,12 @@ def main():
         
         #Print the move that was made and the time it took to process the frame
         print(move, time.time() - start)
+        
+        if vs_comp and (turn_background[2] == 1):
+            result = engine.play(board, chess.engine.Limit(time=0.5))
+            print("Computer move: " + str(result.move))
+            #board_array = update_board_array_uci(board, board_array, chess.Move.uci(result.move))
+            #board.push(result.move)
         
         if wait:
             #Wait for a keypress while updating the chessboard gui
