@@ -55,10 +55,10 @@ radius = 10
 #imagepath = '/home/pi/Pictures/18in.jpg'
 #imagepath = 'aprilTagImageBorders.jpg'
 #imagepath = '/home/blemay360/1EB8-1359/on_four_wot.jpg'
-imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/16bitApriltagsCutout.jpg'
+imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/16bitApriltags_onBoard.jpg'
 image = cv2.imread(imagepath)
 
-image = imutils.rotate(image, 180)
+#image = imutils.rotate(image, 180)
 
 gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
 

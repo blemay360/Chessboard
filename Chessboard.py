@@ -3,11 +3,11 @@
 pi = False
 #Whether to display the input image
 display_input = False
+#Whether to wait for a keypress on each image or not
+wait = True
 #Which apriltags should be looked for
 #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
-tag_family = 'tag36h11'
-#Whether to wait for a keypress on each image or not
-wait = False
+tag_family = 'tag16h5'
 
 #Importing needed libraries
 import contextlib
@@ -22,14 +22,14 @@ if pi:
 
 '''
 -----------------------------------------TO DO--------------------------------------------------
+Adapt color detection function to work with large board
+Test large board with pi
 Test error detection for get_detection_array 
     Take off two pieces at once
     Add an extra piece
 Add adaptive thresholding to get_detection_array
-Make new function for processing first image
+?Make new function for processing first image
 '''
-
-#-----------------------------------------DETECTION FUNCTIONS--------------------------------------------------
 
 #-----------------------------------------APRILTAG FUNCTIONS
 def detect_apriltags(family, image):
@@ -94,6 +94,12 @@ def grab_outside_corners(detections):
     rb = parse_april_tag_coordinate(detections, 3, 'rb')
     lb = parse_april_tag_coordinate(detections, 2, 'lb')
     return lb, rb, rt, lt
+
+def return_tag_margin(input_list):
+    return input_list['margin']
+
+def return_tag_id(input_list):
+    return input_list['id']
 
 #-----------------------------------------IMAGE UTILITIES
 def copy_image(image, num_copies):
@@ -455,7 +461,7 @@ def average_color(image):
     Takes in a grayscale image and returns an average of the nonzero elements
     '''
     return round(np.average(image[np.nonzero(image)]), 4)
-                
+
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTION
 def process_frame(frame, turn_background):
     #If frame is taller than it is wide
@@ -472,14 +478,21 @@ def process_frame(frame, turn_background):
     detections = detect_apriltags(tag_family, frame)
     
     #If not all 4 apriltags are detected
-    if (len(detections) != 4):
-        if (frame.shape[0] > frame.shape[1]):
-            #Revert back to the original frame
-            frame = input_frame
-            #Run apriltag detection again
-            detections = detect_apriltags(tag_family, frame)
-        else:
-            print("Missing an apriltag'")
+    if (len(detections) != 4) and (input_frame.shape[0] > input_frame.shape[1]):
+        print("Rerunning detection on entire image")
+        #Revert back to the original frame
+        frame = input_frame
+        #Run apriltag detection again
+        detections = detect_apriltags(tag_family, frame)
+    
+    #Make copies of original image to keep the same for display 
+    apriltagCorners, shifted, color_detection, piece_detection = copy_image(frame, 4)            
+    
+    #If the detections are still under 4
+    if (len(detections) < 4):
+            print("Missing an apriltag")
+            print("Apriltags found: " + str(len(detections)))
+            print(detections)
             #Set the window to be able to be resized
             cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
             #Resize the window
@@ -490,12 +503,23 @@ def process_frame(frame, turn_background):
             #Show the image
             cv2.imshow("Input Image", frame)
             #Wait for a keypress
-            cv2.waitKey(0) 
-    
-    #Make copies of original image to keep the same for display 
-    apriltagCorners, shifted, color_detection, piece_detection = copy_image(frame, 4)
-    
-    #If 4 apriltags are seen (one in each 4 corners of chessboard), crop image and run detection
+            cv2.waitKey(0)
+    #If there are extra apriltags detected
+    elif (len(detections) > 4):
+        #Make a copy of the detection tuple as a list for easier sorting and deleting
+        detection_list = list(detections)
+        #Sort the detection list by descending confidence in the tag detection
+        detection_list.sort(reverse=True, key=return_tag_margin)
+        #For all the detected tags over 4
+        for i in range(len(detections) - 4):
+            #Remove the last value
+            detection_list.pop()
+        #Sort the list by tag id to return it to the original order
+        detection_list.sort(key=return_tag_id)
+        #Replace the previous detection tuple by the modified one
+        detections = tuple(detection_list)
+
+    #If 4 apriltags are seen (one in each 4 corners of chessboard), crop image and run detection functions
     if(len(detections) == 4):
         #Get values for the inside corners of each 4 apriltags
         lb, rb, rt, lt = grab_inside_corners(detections)
@@ -517,8 +541,13 @@ def process_frame(frame, turn_background):
             #Subtract one piece from whichever side didn't just move
             turn_background[turn_background[2]] -= 1
         
-        #Get the color detection image and color detection array
-        color_detection, color_array = get_color_array(shifted, detection_array, turn_background)
+        if (np.sum(detection_array) != 0):
+            #Get the color detection image and color detection array
+            color_detection, color_array = get_color_array(shifted, detection_array, turn_background)
+        else:
+            #Send minor error message and create a blank color array
+            print("No pieces detected to read color from")
+            color_array = np.zeros((8, 8), dtype=int)
     
     return color_array, piece_detection, color_detection
 
@@ -892,7 +921,8 @@ def main():
         input_image = rawCapture.array
     else:
         #Read the first frame in
-        input_image = cv2.imread('TestingImages/StandardSeries/1.jpg')
+        #input_image = cv2.imread('TestingImages/StandardSeries/1.jpg')
+        input_image = cv2.imread('TestingImages/LargeBoard/1.jpg')
         
     if display_input:
             #Set the window to be able to be resized
@@ -920,7 +950,7 @@ def main():
         #Don't wait for a keypress
         cv2.waitKey(1)
 
-    run = True
+    run = False
 
     counter = 2
     while run:
