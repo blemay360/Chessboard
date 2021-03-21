@@ -303,12 +303,17 @@ def get_color_array(image, detection_array, turn_background):
     The input image is assumed to be a square
     Returns a color array with 0s where no piece is, 1s where black pieces are, and 2s where white pieces are
     '''
+    #Whether to add text to the color detection image
+    add_text_to_image = True
     #Convert a copy of in input image to a grayscale image
-    gray = cv2.cvtColor(copy.copy(image), cv2.COLOR_BGR2GRAY)
+    hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    gray = cv2.cvtColor(copy.copy(hsvImage), cv2.COLOR_BGR2GRAY)
     #Get the side length of the input image, assumed to be a square
     size = gray.shape[0]
     #Calculate the size of a scaled up pixel from the chessboard (not the size of a pixel in the image)
     pixel = size / 82
+    #Amount of space to move inwards from the corner of the square when setting up the region of interest
+    margin = 2
     
     if pi:
         #Size of text to add to image
@@ -343,16 +348,17 @@ def get_color_array(image, detection_array, turn_background):
         for x in range(8):
             #If the current square is empty
             if (detection_array[y][x] == 0):
-                #Calculate upper left corner of rectangle to measure color in
-                start_point = (int(round(2 * pixel + 10 * pixel * x)), int(round(2 * pixel + 10 * pixel * y)))
-                #Calculate lower right corner of rectangel to measure color in
-                end_point = (int(round(10 * pixel * (x + 1))), int(round(10 * pixel * (y + 1))))
+                #Calculate the coordinates of the upper left corner of the rectangle to be measured
+                start_point = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
+                #Calculate the coordinates of the lower right corner off the rectange to be measured
+                end_point = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
                 
                 #Take the average color in the rectangle
                 average = average_color(gray[start_point[1]:end_point[1], start_point[0]:end_point[0]])
                 
-                #Display the average color in the current square
-                cv2.putText(gray, str(round(average, 1)), (int(start_point[0]), int(start_point[1] + pixel*2.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
+                if add_text_to_image:
+                    #Display the average color in the current square
+                    cv2.putText(gray, str(round(average, 1)), (int(start_point[0]), int(start_point[1] + pixel*2.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
                 
                 #Draw a rectangle around the rectangle in which color is measured for this square
                 cv2.rectangle(gray, start_point, end_point, 255, line_thickness)
@@ -393,11 +399,6 @@ def get_color_array(image, detection_array, turn_background):
     #Compute lower and upper limits of colors to remove from each square before measuring piece color
     color_refs = [[white_square_ref * (1 - percentange), white_square_ref * (1 + percentange)], 
                   [black_square_ref * (1 - percentange), black_square_ref * (1 + percentange)]]
-    #white_square_ref_higher = white_square_ref * (1 + percentange)
-    #white_square_ref_lower = white_square_ref * (1 - percentange)
-    #black_square_ref_higher = black_square_ref * (1 + percentange)
-    #black_square_ref_lower = black_square_ref * (1 - percentange)
-    
     
     #Iterate through each rank (horizontal row)
     for y in range(8):
@@ -405,10 +406,11 @@ def get_color_array(image, detection_array, turn_background):
         for x in range(8):
             #If current square is occupied
             if (detection_array[y][x] == 1):
-                #Calculate upper left corner of rectangle to measure piece color in
-                start_point = (int(round(2 * pixel + 10 * pixel * x)), int(round(2 * pixel + 10 * pixel * y)))
-                #Calculate lower right corner of rectangle to measure piece color in
-                end_point = (int(round(10 * pixel * (x + 1))), int(round(10 * pixel * (y + 1))))
+                #Calculate the coordinates of the upper left corner of the rectangle to be measured
+                start_point = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
+                #Calculate the coordinates of the lower right corner off the rectange to be measured
+                end_point = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
+                
                 #Section off square as just the part of the image to measure
                 square = gray[start_point[1]:end_point[1], start_point[0]:end_point[0]]
                 #Create a mask for the current square of colors that are close to the average color of the current square colors empty square color
@@ -422,8 +424,9 @@ def get_color_array(image, detection_array, turn_background):
                 #Take the average color of the piece, not considering the color of the empty square that was removed
                 color_array[y][x] = average_color(output)
                 
-                #Print the average color of the piece on the grayscale image
-                cv2.putText(gray, str(average_color(output)), (int(start_point[0]), int(start_point[1] + pixel*2.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
+                if add_text_to_image:
+                    #Print the average color of the piece on the grayscale image
+                    cv2.putText(gray, str(round(average_color(output), 1)), (int(start_point[0]), int(start_point[1] + pixel*2.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
     
     #Flatten the color array to a 1D array to bbe able to sort it
     raveled_color_array = np.ravel(color_array)
@@ -450,9 +453,10 @@ def get_color_array(image, detection_array, turn_background):
                     #Label it white
                     color_array[y][x] = 2
             #Calculate upper left corner of rectangle to put text in
-            start_point = (int(round(2 * pixel + 10 * pixel * x)), int(round(2 * pixel + 10 * pixel * y)))
-            #Label the current square with the determination of whether it is empty, or what color piece it has
-            cv2.putText(gray, color_ref[color_array[y][x]], (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
+            start_point = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
+            if add_text_to_image:
+                #Label the current square with the determination of whether it is empty, or what color piece it has
+                cv2.putText(gray, color_ref[color_array[y][x]], (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
     return gray, color_array.astype(np.int64)
 
 def average_color(image):
