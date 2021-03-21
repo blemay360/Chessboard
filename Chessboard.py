@@ -1,6 +1,6 @@
 #Variables to change stuff on a high level
 #Whether code is being run on the pi
-pi = True
+pi = False
 #Whether to display the input image
 display_input = False
 #Whether to wait for a keypress on each image or not
@@ -21,7 +21,7 @@ from apriltag import apriltag
 if pi:
     from picamera.array import PiRGBArray
     from picamera import PiCamera
-#Test for git pull
+
 '''
 -----------------------------------------TO DO--------------------------------------------------
 Adapt color detection function to work with large board
@@ -1011,6 +1011,30 @@ def main():
     #Print the chessboard to the window
     print_board(window, board_array, square_size)
     
+    #Desired difficulty of the computer
+    difficulty = 900
+    
+    if pi:
+        #List of engine to use and their rankings
+        engines = [[968, "feeks-master/main.py"], [1198, "belofte64-2.1.1"], [3717, "stockfish_13_linux_x64"]]
+        #Sort engines by rating
+        engines.sort(key = lambda engines: engines[0]) 
+        #Sort to get closest ranking to the desired difficulty
+        engine_to_use = min([(engines[i][0], engines[i][1], i) for i in range(len(engines))], key = lambda x: abs(x[0]-difficulty))
+        print("Using engine " + engine_to_use[1] + " with a rating of " + str(engine_to_use[0]))
+        #Open engine
+        engine = chess.engine.SimpleEngine.popen_uci("/home/pi/Chessboard/Engines/" + engine_to_use[1])
+    else:
+        #List of engine to use and their rankings
+        engines = [[968, "feeks-master/main.py"], [1198, "belofte64-2.1.1"], [3717, "stockfish_13_linux_x64"]]
+        #Sort engines by rating
+        engines.sort(key = lambda engines: engines[0]) 
+        #Sort to get closest ranking to the desired difficulty
+        engine_to_use = min([(engines[i][0], engines[i][1], i) for i in range(len(engines))], key = lambda x: abs(x[0]-difficulty))
+        print("Using engine " + engine_to_use[1] + " with a rating of " + str(engine_to_use[0]))
+        #Open engine
+        engine = chess.engine.SimpleEngine.popen_uci("/home/blemay360/Documents/chessboard-main/Engines/" + engine_to_use[1])
+    
     #Initialize a variable to keep track of how many white and black pieces are on the board, and which side just moved
     turn_background = [16, 16, 0]
     #[# of white pieces on board, # of black pieces on board, 0=black just moved | 1=white just moved]
@@ -1093,6 +1117,7 @@ def main():
         show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
         #Compare the color detection array of the current image with the last image to deterime the move that was made
         move = color_array_to_uci(old_color_array, new_color_array, board)
+        
         #Compute the move variable using the chess library
         move = chess.Move.from_uci(move)
         #If the move wasn't legal
