@@ -9,6 +9,8 @@ wait = True
 #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
 tag_family = 'tag16h5'
 
+edge_count_threshold = 50000
+
 #Importing needed libraries
 import contextlib
 with contextlib.redirect_stdout(None):
@@ -19,7 +21,7 @@ from apriltag import apriltag
 if pi:
     from picamera.array import PiRGBArray
     from picamera import PiCamera
-
+#Test for git pull
 '''
 -----------------------------------------TO DO--------------------------------------------------
 Adapt color detection function to work with large board
@@ -136,12 +138,14 @@ def circle_image(image, coordinates, color, ratio):
     #Color definition dictionary
     color_dict = {'blue':(255, 0, 0), 'green':(0, 255, 0), 'red':(0, 0, 255)}
     
-    # Line thickness of 2 px
+    #Fill entire circle
     thickness = -1
 
     #If the image is from a picture, use a large radius circle to make the circle more visible on a large picture
     if (ratio == 'picture'):
         radius = 12
+    elif (isinstance(ratio, int)):
+        radius = ratio
     #If the image is from a video, use a small radius circle so as to not take up too much space
     else:
         radius = 3
@@ -215,30 +219,46 @@ def perspective_shift(image, corners):
     
     return shifted_image
 
-def get_detection_array(image, turn_background):
+def get_detection_color_array(image, turn_background, first_frame=False):
+    global edge_count_threshold
     '''
     Function to detect pieces on a chessboard
     Takes in an image of just the chessboard, perspective shifted, and the amount of pieces on the board in the previous frame to help with thresholding
     Returns the input image with each square replaced with its edge detection array and color coded squares showing which squares are deemed to have pieces in them
     The rectangles used for edge detection are the inside parts of the squares of the chessboard
     Each square was made to be 10 x 10 pixels before being scaled up, 10% of the square width is taken off when calculating corner coordinates, so the measured rectangle ends up being the inside 8 x 8 of the square
-    A red rectange means a piece was detected, a green rectangle means the square is empty
+    A white rectange means a piece was detected, a black rectangle means the square is empty
     '''
+    
+    add_text_to_image = True
+    
     #Make a copy of the input image to modify to show detection
-    detected_image = copy.copy(image)
+    detection_image = copy.copy(image)
+    color_image = cv2.cvtColor(copy.copy(image), cv2.COLOR_BGR2HSV)
+    color_image = np.stack((color_image[:,:,0],) * 3, axis=-1)
             
     #Rectangle color for empty squares
-    empty_color = (0, 255, 0)
+    empty_color = (0, 0, 0)
     #Rectangle color for filled squares
-    occupied_color = (0, 0, 255)
-    #Set thickness of the rectangle lines
+    occupied_color = (255, 255, 255)
+    
     if pi:
-        thickness = 1
+        #Size of text to add to image
+        text_size = 0.25
+        #Thickness of text to add to image
+        text_thickness = 1
+        #Thickness of lines to draw on image
+        line_thickness = 1
     else:
-        thickness = 6
+        #Size of text to add to image
+        text_size = 1.5
+        #Thickness of text to add to image
+        text_thickness = 4
+        #Thickness of lines to draw on image
+        line_thickness = 6
     
     #Size of the input image, assumed to be a square because the input image should be perspective shifted
-    size = detected_image.shape[0]
+    size = detection_image.shape[0]
     #Calculate the size of a pixel on the paper (NOT an actual pixel, the pixel here refers to creating the chessboard)
     #The apriltag is separated from the chessboard by one pixel, each square of the chessboard is 10 pixels wide, meaning 82 pixels for the width/height of the input image
     pixel = size / 82
@@ -249,52 +269,138 @@ def get_detection_array(image, turn_background):
     edge_count = np.zeros((8, 8), dtype=int)
     #Initialize array for storing the determination for whether each square is occupied
     detection_array = np.zeros((8, 8), dtype=int)
+    #Initialize array for storing the color of each piece
+    color_array = np.zeros((8, 8), dtype=int)
+    
+    if first_frame:
+        #Initialize list to store the amount of edges detected in each occupied square
+        occupied_edge_count = [0] * 32
     
     #Iterate through each rank of the chessboard
     for y in range(8):
         #Iterate through each file of the chessboard
         for x in range(8):
             #Calculate the coordinates of the upper left corner of the rectangle to be measured
-            start_point = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
+            lt = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
             #Calculate the coordinates of the lower right corner off the rectange to be measured
-            end_point = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
+            rb = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
             
-            #Perform edge detection on the rectangle, replacing the relevant part of the input image with the edge detection array, and storing the edge cound in the edge_count array
-            detected_image[start_point[1]:end_point[1], start_point[0]:end_point[0]], edge_count[y][x] = edge_detection(detected_image[start_point[1]:end_point[1], start_point[0]:end_point[0]])            
+            #Crop out only the current square for analysis
+            square = detection_image[lt[1]:rb[1], lt[0]:rb[0]]
             
-            #If the edge count of the square exceeds 50000 the square is deemed occupied
-            if (edge_count[y][x] > 50000):
+            #Perform edge detection on the square, replacing the relevant part of the input image with the edge detection array, storing the edge count in the edge_count array, and taking in the center of mass of the detected edges as well as the standard deviation of points
+            detection_image[lt[1]:rb[1], lt[0]:rb[0]], edge_count[y][x], x_average, y_average, std = edge_detection(square)            
+            
+            #If this is the first frame, all squares in the 0th, 1st, 6th, and 7th are known to be occupied
+            if first_frame and ((y == 0) or (y == 1) or (y == 6) or (y == 7)):
+                #Save edge count to use in setting the edge_count_threshold
+                occupied_edge_count[(y % 4) * 8 + x] = edge_count[y][x]
+                #If the edge_count is below the current edge_count_threshold, raise the edge_count to be above the threshold so it starts as a occupied square
+                if (edge_count[y][x] <= edge_count_threshold):
+                    edge_count[y][x] = edge_count_threshold + 1
+            
+            #If the edge count of the square exceeds edge_count_threshold the square is deemed occupied
+            if (edge_count[y][x] > edge_count_threshold):
                 #Add a rectangle of the appropriate color to the output image
-                detected_image = cv2.rectangle(detected_image, start_point, end_point, occupied_color, thickness)
+                detection_image = cv2.rectangle(detection_image, lt, rb, occupied_color, line_thickness)
                 #Mark the square as occupied in the output array
                 detection_array[y][x] = 1
-            #If the edge cound of the square is or is under 50000, then the square is empty
+                #Measure the average color of the piece
+                color_image[lt[1]:rb[1], lt[0]:rb[0]], color_array[y][x] = average_color(color_image[lt[1]:rb[1], lt[0]:rb[0]], x_average, y_average, std)
+            #If the edge cound of the square is or is under edge_count_threshold, then the square is empty
             else:
                 #Add a rectangle of the appropriate color to the output image
-                detected_image = cv2.rectangle(detected_image, start_point, end_point, empty_color, thickness)
+                detection_image = cv2.rectangle(detection_image, lt, rb, empty_color, line_thickness)
                 #Mark the square as occupied in the output array
                 detection_array[y][x] = 0
+
+    if first_frame:
+        #Set new edge_count_threshold to be slightly smaller than the lowest edge count of an occupied square
+        edge_count_threshold = int(min(occupied_edge_count) * 0.8)
     
     if (np.count_nonzero(detection_array) > (turn_background[0] + turn_background[1]) or np.count_nonzero(detection_array) < (turn_background[0] + turn_background[1] - 1)):
         print("Error detecting number of pieces on board")
+        #Maybe change the threshold here?
+    
+    #If one less piece is on the board in the current frame than the sum of pieces expected from both sides of the board
+    if (np.count_nonzero(detection_array) + 1 == turn_background[0] + turn_background[1]):
+        #Subtract one piece from whichever side didn't just move
+        turn_background[turn_background[2]] -= 1
+
+    #Flatten the color array to a 1D array to bbe able to sort it
+    raveled_color_array = np.ravel(color_array)
+    #Sort the nonzero values of the flattened color array
+    color_array_sorted = np.sort(raveled_color_array[np.flatnonzero(color_array)])
+    
+    #Dictionary for what to display on each square of the output image depending on its color_array value
+    #color_ref = {0:"Empty", 1:"Black", 2:"White"}
+    color_ref = {0:(0, 255, 0), 1:(50, 50, 50), 2:(225, 225, 225)}
+    
+    #Iterate through each rank (horizontal row)
+    for y in range(8):
+        #Iterate through each file (vertical column)
+        for x in range(8):
+            #If the current square is occupied
+            if (color_array[y][x] > 0):
+                #If the average color of the current piece is in the bottom x number of average piece colors on the board, label it as white
+                #x is gotten from the turn_background list, where turn_background[0] tells the number of white pieces expected on the board
+                #turn_background is updated above based on when the detection array shows a piece disappeared
+                if (color_array[y][x] in color_array_sorted[:turn_background[0]]):
+                    #Label the current square as having a white piece
+                    color_array[y][x] = 2
+                #If the current piece color isn't determined to be white, label it black
+                else:
+                    #Label it black
+                    color_array[y][x] = 1
+                if add_text_to_image:
+                    margin = 1
+                    #Calculate the coordinates of the upper left corner of the rectangle to be measured
+                    lt = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
+                    #Calculate the coordinates of the lower right corner off the rectange to be measured
+                    rb = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
+                    #Label the current square with the determination of whether it is empty, or what color piece it has
+                    #Add a rectangle of the appropriate color to the output image
+                    color_image = cv2.rectangle(color_image, lt, rb, color_ref[color_array[y][x]], int(pixel)*2)
+                    #cv2.putText(color_image, color_ref[color_array[y][x]], (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, (255, 255, 255), text_thickness)
     
     #print(edge_count)
     #print(detection_array)
-    return detected_image, detection_array
+    #print(color_array)
+    return detection_image, detection_array, color_image, color_array
 
 def edge_detection(image):
     '''
-    Function to perform edge detection on an image, and return the array of edges and how many edge were measured
+    Function to perform edge detection on an image, and return the array of edges and how many edge were measured, as well as the center of mass of the edges and the standard deviation of the edges
     Takes in the image to measure, and outputs the measured image and the number of edges
     '''
     #Blur the image to get rid of noise and bad edge measurements
-    blurred = cv2.medianBlur(image,3)
+    blurred = cv2.medianBlur(image,7)
     #Perform edge measurement
     edges = cv2.Canny(blurred,80,100)
+    
+    #If there are edges
+    if np.count_nonzero(edges):
+        #Find average y location of edges
+        y_average = int(round(np.mean(np.nonzero(edges)[0])))
+        #Find average x location of edges
+        x_average = int(round(np.mean(np.nonzero(edges)[1])))
+        #Find standard deviation of edges in y direction
+        y_std = int(round(np.std(np.nonzero(edges)[0])))
+        #Find standard deviation of edges in x direction
+        x_std = int(round(np.std(np.nonzero(edges)[1])))
+        #Average standard deviation values to get circle radius
+        std = int(round(1.35 * (y_std + x_std) / 2))
+    #If there are no edges
+    else:
+        #Set all statistics values to 0
+        y_average, x_average, std = 0, 0, 0
+        
     #Copy edge detection image 3 times so it can replace a section of a 3 channel image
     edges = np.stack((edges,)*3, axis=-1)
-    
-    return edges, np.sum(edges)
+    #Find total amount of edges
+    edge_count = np.sum(edges)
+        
+    return edges, edge_count, x_average, y_average, std
 
 def get_color_array(image, detection_array, turn_background):
     '''
@@ -459,35 +565,46 @@ def get_color_array(image, detection_array, turn_background):
                 cv2.putText(gray, color_ref[color_array[y][x]], (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
     return gray, color_array.astype(np.int64)
 
-def average_color(image):
+def average_color(image, x, y, radius):
     '''
-    Function to average the color of a grayscale image to 4 decimal points
-    Takes in a grayscale image and returns an average of the nonzero elements
+    Function to average the hue of a hsv image
+    Takes in a hsv image and returns an average of the nonzero hues inside a given circle
     '''
-    return round(np.average(image[np.nonzero(image)]), 4)
+    #Create an empty mask the size of the input image
+    mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
+    #Place a white circle on the mask with the given dimensions
+    cv2.circle(mask, (x, y), radius, (255, 255, 255), -1)
+    #Create a new image called color_measure by only keeping the hue pixels that intersect with the white circle on the mask
+    color_measure = np.stack((image[:,:,0]*mask,) * 3, axis=-1)
+    return color_measure, round(np.average(color_measure[np.nonzero(mask)]))
 
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTION
-def process_frame(frame, turn_background):
-    #If frame is taller than it is wide
-    if (frame.shape[0] > frame.shape[1]):
-        #Make a copy of frame in case cropping it doesn't work
-        input_frame = frame
-        #Create a square that is as wide as the photo and in the middle of the frame
-        start_point = (0, (frame.shape[0] - frame.shape[1])//2)
-        end_point = (frame.shape[1], (frame.shape[0] - frame.shape[1])//2 + frame.shape[1])
-        #Crop the frame to just the middle square
-        frame = frame[start_point[1]:end_point[1], start_point[0]:end_point[0]]
+def process_frame(frame, turn_background, first_frame=False):
+    #Whether to automaticallly focus on the middle of the image or not
+    auto_crop = False
+    
+    if auto_crop:
+        #If frame is taller than it is wide
+        if (frame.shape[0] > frame.shape[1]):
+            #Make a copy of frame in case cropping it doesn't work
+            input_frame = frame
+            #Create a square that is as wide as the photo and in the middle of the frame
+            start_point = (0, (frame.shape[0] - frame.shape[1])//2)
+            end_point = (frame.shape[1], (frame.shape[0] - frame.shape[1])//2 + frame.shape[1])
+            #Crop the frame to just the middle square
+            frame = frame[start_point[1]:end_point[1], start_point[0]:end_point[0]]
     
     #Run apriltag detection on image
     detections = detect_apriltags(tag_family, frame)
     
-    #If not all 4 apriltags are detected
-    if (len(detections) != 4) and (input_frame.shape[0] > input_frame.shape[1]):
-        print("Rerunning detection on entire image")
-        #Revert back to the original frame
-        frame = input_frame
-        #Run apriltag detection again
-        detections = detect_apriltags(tag_family, frame)
+    if auto_crop:
+        #If not all 4 apriltags are detected
+        if (len(detections) != 4) and (input_frame.shape[0] > input_frame.shape[1]):
+            print("Rerunning detection on entire image")
+            #Revert back to the original frame
+            frame = input_frame
+            #Run apriltag detection again
+            detections = detect_apriltags(tag_family, frame)
     
     #Make copies of original image to keep the same for display 
     apriltagCorners, shifted, color_detection, piece_detection = copy_image(frame, 4)            
@@ -528,30 +645,14 @@ def process_frame(frame, turn_background):
         #Get values for the inside corners of each 4 apriltags
         lb, rb, rt, lt = grab_inside_corners(detections)
         
-        #Get values for the outside corners of each 4 apriltags
-        out_lb, out_rb, out_rt, out_lt = grab_outside_corners(detections)
-        
         #Place circles on inside corners of each apriltag
-        circle_image(apriltagCorners, (lt, rt, rb, lb), 'red', 'picture')
+        #circle_image(apriltagCorners, (lt, rt, rb, lb), 'red', 'picture')
         
         #Shift perspective to make to make the inside corners of the apriltags the corners of the image
         shifted = perspective_shift(shifted, (lt, rt, lb, rb))
         
-        #Go through each square of the chessboard to tell if square is populated with piece
-        piece_detection, detection_array = get_detection_array(shifted, turn_background)
-        
-        #If one less piece is on the board in the current frame than the sum of pieces expected from both sides of the board
-        if (np.count_nonzero(detection_array) + 1 == turn_background[0] + turn_background[1]):
-            #Subtract one piece from whichever side didn't just move
-            turn_background[turn_background[2]] -= 1
-        
-        if (np.sum(detection_array) != 0):
-            #Get the color detection image and color detection array
-            color_detection, color_array = get_color_array(shifted, detection_array, turn_background)
-        else:
-            #Send minor error message and create a blank color array
-            print("No pieces detected to read color from")
-            color_array = np.zeros((8, 8), dtype=int)
+        #Go through each square of the chessboard to tell if square is populated with piece and measure piece color
+        piece_detection, detection_array, color_detection, color_array = get_detection_color_array(shifted, turn_background, first_frame)
     
     return color_array, piece_detection, color_detection
 
@@ -940,12 +1041,12 @@ def main():
             cv2.imshow("Input Image", input_image)
             #Pause until user presses a key
             cv2.waitKey(10)
-    
+        
     #Save the color array as old to compare with the second frame later
-    old_color_array, piece_detection, gray = process_frame(input_image, turn_background)
+    old_color_array, piece_detection, gray = process_frame(input_image, turn_background, True)
     #Show the grayscale color detection image and piece detection image
     show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
-    
+        
     if wait:
         #Wait for a keypress while updating the chessboard gui
         while (cv2.waitKey(100) == -1):
@@ -954,7 +1055,7 @@ def main():
         #Don't wait for a keypress
         cv2.waitKey(1)
 
-    run = False
+    run = True
 
     counter = 2
     while run:
@@ -971,7 +1072,7 @@ def main():
             camera.capture(rawCapture, format="bgr")
             input_image = rawCapture.array
         else:
-            input_image = cv2.imread('TestingImages/StandardSeries/' + str(counter) + '.jpg')
+            input_image = cv2.imread('TestingImages/LargeBoard/' + str(counter) + '.jpg')
         
         #Process the current frame
         new_color_array, piece_detection, gray = process_frame(input_image, turn_background)
@@ -1022,7 +1123,7 @@ def main():
         counter += 1
         
         #If it's running from images and finishes the last image
-        if (counter == 36) and not pi:
+        if (counter == 7) and not pi:
             #Stop running the program
             run = False
     
