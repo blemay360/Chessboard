@@ -1003,3 +1003,373 @@ Sun Mar 21 18:15:13 2021 time is up
 Sun Mar 21 18:15:13 2021 time is up
 Sun Mar 21 18:15:13 2021 OUT: bestmove f7f6
 Sun Mar 21 18:15:25 2021 time is up
+Sun Mar 21 18:23:56 2021 Set TT size to 8192 entries 
+Sun Mar 21 18:23:56 2021 stdin thread started
+Sun Mar 21 18:23:56 2021 IN: uci
+Sun Mar 21 18:23:56 2021 OUT: id name Feeks
+Sun Mar 21 18:23:56 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Mar 21 18:23:56 2021 OUT: uciok
+Sun Mar 21 18:24:55 2021 Set TT size to 8192 entries 
+Sun Mar 21 18:24:55 2021 stdin thread started
+Sun Mar 21 18:24:55 2021 IN: uci
+Sun Mar 21 18:24:55 2021 OUT: id name Feeks
+Sun Mar 21 18:24:55 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Mar 21 18:24:56 2021 OUT: uciok
+Sun Mar 21 18:25:04 2021 IN: ucinewgame
+Sun Mar 21 18:25:04 2021 IN: isready
+Sun Mar 21 18:25:04 2021 OUT: readyok
+Sun Mar 21 18:25:04 2021 IN: position startpos moves e2e4
+Sun Mar 21 18:25:04 2021 IN: go movetime 500
+Sun Mar 21 18:25:04 2021 OUT: info string waiting for init thread
+Sun Mar 21 18:25:04 2021 OUT: info string initialized
+Sun Mar 21 18:25:04 2021 search for 0.500000 seconds
+Sun Mar 21 18:25:05 2021 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+Sun Mar 21 18:25:05 2021 depth 1 score cp 42 time 27 nodes 21 pv f7f6
+Sun Mar 21 18:25:05 2021 depth 2 score cp 30 time 142 nodes 135 pv f7f6 g1f3
+Sun Mar 21 18:25:05 2021 depth 3 score cp 35 time 429 nodes 476 pv f7f6 g1f3 c7c6
+Sun Mar 21 18:25:05 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:25:05 2021 selected move: [35.0, Move.from_uci('f7f6'), 3, 0.428574800491333]
+Sun Mar 21 18:25:05 2021 nps: 1103.836221, nodes: 476, tt_hits: 18.987342%, avg bco index: 0.38
+Sun Mar 21 18:25:05 2021 time is up
+Sun Mar 21 18:25:05 2021 OUT: bestmove f7f6
+Sun Mar 21 18:26:06 2021 time is up
+Sun Mar 21 18:26:57 2021 Set TT size to 8192 entries 
+Sun Mar 21 18:26:57 2021 stdin thread started
+Sun Mar 21 18:26:57 2021 IN: uci
+Sun Mar 21 18:26:57 2021 OUT: id name Feeks
+Sun Mar 21 18:26:57 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Mar 21 18:26:57 2021 OUT: uciok
+Sun Mar 21 18:27:06 2021 Set TT size to 8192 entries 
+Sun Mar 21 18:27:06 2021 stdin thread started
+Sun Mar 21 18:27:06 2021 IN: uci
+Sun Mar 21 18:27:06 2021 OUT: id name Feeks
+Sun Mar 21 18:27:06 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Mar 21 18:27:06 2021 OUT: uciok
+Sun Mar 21 18:27:17 2021 IN: ucinewgame
+Sun Mar 21 18:27:17 2021 IN: isready
+Sun Mar 21 18:27:17 2021 OUT: readyok
+Sun Mar 21 18:27:17 2021 IN: position startpos moves e2e4
+Sun Mar 21 18:27:17 2021 IN: go movetime 500
+Sun Mar 21 18:27:17 2021 OUT: info string waiting for init thread
+Sun Mar 21 18:27:17 2021 OUT: info string initialized
+Sun Mar 21 18:27:17 2021 search for 0.500000 seconds
+Sun Mar 21 18:27:17 2021 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+Sun Mar 21 18:27:17 2021 depth 1 score cp 42 time 23 nodes 21 pv f7f6
+Sun Mar 21 18:27:17 2021 depth 2 score cp 30 time 133 nodes 135 pv f7f6 g1f3
+Sun Mar 21 18:27:17 2021 depth 3 score cp 35 time 411 nodes 476 pv f7f6 g1f3 c7c6
+Sun Mar 21 18:27:17 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:27:17 2021 selected move: [35.0, Move.from_uci('f7f6'), 3, 0.4103832244873047]
+Sun Mar 21 18:27:17 2021 nps: 1152.058572, nodes: 476, tt_hits: 18.987342%, avg bco index: 0.38
+Sun Mar 21 18:27:17 2021 time is up
+Sun Mar 21 18:27:17 2021 OUT: bestmove f7f6
+Sun Mar 21 18:27:31 2021 IN: position startpos moves e2e4 f7f6 d2d4
+Sun Mar 21 18:27:31 2021 IN: go movetime 500
+Sun Mar 21 18:27:31 2021 time is up
+Sun Mar 21 18:27:31 2021 search for 0.500000 seconds
+Sun Mar 21 18:27:31 2021 rnbqkbnr/ppppp1pp/5p2/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2
+Sun Mar 21 18:27:31 2021 depth 1 score cp 37 time 22 nodes 20 pv c7c6
+Sun Mar 21 18:27:31 2021 depth 2 score cp 25 time 145 nodes 143 pv c7c6 g1f3
+Sun Mar 21 18:27:31 2021 depth 3 score cp 28 time 483 nodes 507 pv c7c6 g1f3 g7g6
+Sun Mar 21 18:27:31 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('e8f7'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:27:31 2021 selected move: [28.75, Move.from_uci('c7c6'), 3, 0.4826505184173584]
+Sun Mar 21 18:27:31 2021 nps: 1044.850500, nodes: 507, tt_hits: 17.045455%, avg bco index: 0.46
+Sun Mar 21 18:27:31 2021 time is up
+Sun Mar 21 18:27:31 2021 OUT: bestmove c7c6
+Sun Mar 21 18:27:44 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5
+Sun Mar 21 18:27:44 2021 IN: go movetime 500
+Sun Mar 21 18:27:44 2021 time is up
+Sun Mar 21 18:27:44 2021 search for 0.500000 seconds
+Sun Mar 21 18:27:44 2021 rnbqkbnr/pp1pp1pp/2p2p2/4P3/3P4/8/PPP2PPP/RNBQKBNR b KQkq - 0 3
+Sun Mar 21 18:27:44 2021 depth 1 score cp 40 time 45 nodes 40 pv g7g6
+Sun Mar 21 18:27:44 2021 depth 2 score cp 38 time 273 nodes 288 pv f6e5 d4e5
+Sun Mar 21 18:27:44 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('e8f7'), Move.from_uci('d8c7'), Move.from_uci('d8b6'), Move.from_uci('d8a5'), Move.from_uci('b8a6'), Move.from_uci('f6e5'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:27:44 2021 selected move: [38.75, Move.from_uci('f6e5'), 2, 0.2727646827697754]
+Sun Mar 21 18:27:44 2021 nps: 1046.212033, nodes: 288, tt_hits: 9.090909%, avg bco index: 0.42
+Sun Mar 21 18:27:44 2021 time is up
+Sun Mar 21 18:27:44 2021 OUT: bestmove f6e5
+Sun Mar 21 18:28:01 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5
+Sun Mar 21 18:28:01 2021 IN: go movetime 500
+Sun Mar 21 18:28:01 2021 time is up
+Sun Mar 21 18:28:01 2021 search for 0.500000 seconds
+Sun Mar 21 18:28:01 2021 rnbqkbnr/pp1pp1pp/2p5/4P3/8/8/PPP2PPP/RNBQKBNR b KQkq - 0 4
+Sun Mar 21 18:28:01 2021 depth 1 score cp 118 time 79 nodes 83 pv d8a5
+Sun Mar 21 18:28:02 2021 depth 2 score cp 118 time 217 nodes 231 pv d8a5 b1c3
+Sun Mar 21 18:28:02 2021 depth 3 score cp 118 time 364 nodes 408 pv d8a5 b1c3 a5e5
+Sun Mar 21 18:28:02 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('e8f7'), Move.from_uci('d8c7'), Move.from_uci('d8b6'), Move.from_uci('d8a5'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:28:02 2021 selected move: [118.75, Move.from_uci('d8a5'), 3, 0.36339783668518066]
+Sun Mar 21 18:28:02 2021 nps: 1114.648279, nodes: 408, tt_hits: 18.918919%, avg bco index: 0.42
+Sun Mar 21 18:28:02 2021 time is up
+Sun Mar 21 18:28:02 2021 OUT: bestmove d8a5
+Sun Mar 21 18:28:12 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5 d8a5 c2c3
+Sun Mar 21 18:28:12 2021 IN: go movetime 500
+Sun Mar 21 18:28:12 2021 time is up
+Sun Mar 21 18:28:12 2021 search for 0.500000 seconds
+Sun Mar 21 18:28:12 2021 rnb1kbnr/pp1pp1pp/2p5/q3P3/8/2P5/PP3PPP/RNBQKBNR b KQkq - 0 5
+Sun Mar 21 18:28:12 2021 depth 1 score cp 136 time 42 nodes 42 pv a5e5
+Sun Mar 21 18:28:12 2021 depth 2 score cp 136 time 211 nodes 207 pv a5e5 g1e2
+Sun Mar 21 18:28:13 2021 depth 3 score cp 140 time 350 nodes 367 pv a5e5 g1e2 g7g6
+Sun Mar 21 18:28:13 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('e8d8'), Move.from_uci('e8f7'), Move.from_uci('b8a6'), Move.from_uci('a5d8'), Move.from_uci('a5c7'), Move.from_uci('a5b6'), Move.from_uci('a5a6'), Move.from_uci('a5e5'), Move.from_uci('a5d5'), Move.from_uci('a5c5'), Move.from_uci('a5b5'), Move.from_uci('a5b4'), Move.from_uci('a5a4'), Move.from_uci('a5c3'), Move.from_uci('a5a3'), Move.from_uci('a5a2'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('d7d5'), Move.from_uci('b7b5')]
+Sun Mar 21 18:28:13 2021 selected move: [140.0, Move.from_uci('a5e5'), 3, 0.3495676517486572]
+Sun Mar 21 18:28:13 2021 nps: 1040.784297, nodes: 367, tt_hits: 17.777778%, avg bco index: 0.58
+Sun Mar 21 18:28:13 2021 time is up
+Sun Mar 21 18:28:13 2021 OUT: bestmove a5e5
+Sun Mar 21 18:28:31 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5 d8a5 c2c3 a5e5 f1e2
+Sun Mar 21 18:28:31 2021 IN: go movetime 500
+Sun Mar 21 18:28:31 2021 time is up
+Sun Mar 21 18:28:31 2021 search for 0.500000 seconds
+Sun Mar 21 18:28:31 2021 rnb1kbnr/pp1pp1pp/2p5/4q3/8/2P5/PP2BPPP/RNBQK1NR b KQkq - 1 6
+Sun Mar 21 18:28:31 2021 depth 1 score cp 148 time 42 nodes 42 pv g7g6
+Sun Mar 21 18:28:31 2021 depth 2 score cp 136 time 237 nodes 243 pv g7g6 g1f3
+Sun Mar 21 18:28:31 2021 time is up
+Sun Mar 21 18:28:31 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('e8d8'), Move.from_uci('e8f7'), Move.from_uci('b8a6'), Move.from_uci('e5c7'), Move.from_uci('e5f6'), Move.from_uci('e5e6'), Move.from_uci('e5d6'), Move.from_uci('e5h5'), Move.from_uci('e5g5'), Move.from_uci('e5f5'), Move.from_uci('e5d5'), Move.from_uci('e5c5'), Move.from_uci('e5b5'), Move.from_uci('e5a5'), Move.from_uci('e5f4'), Move.from_uci('e5e4'), Move.from_uci('e5d4'), Move.from_uci('e5g3'), Move.from_uci('e5e3'), Move.from_uci('e5c3'), Move.from_uci('e5h2'), Move.from_uci('e5e2'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:28:31 2021 selected move: [136.25, Move.from_uci('g7g6'), 2, 0.5028908252716064]
+Sun Mar 21 18:28:31 2021 nps: 1039.819883, nodes: 524, tt_hits: 11.267606%, avg bco index: 0.79
+Sun Mar 21 18:28:31 2021 time is up
+Sun Mar 21 18:28:31 2021 OUT: bestmove g7g6
+Sun Mar 21 18:28:43 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5 d8a5 c2c3 a5e5 f1e2 g7g6 g1f3
+Sun Mar 21 18:28:43 2021 IN: go movetime 500
+Sun Mar 21 18:28:43 2021 time is up
+Sun Mar 21 18:28:43 2021 search for 0.500000 seconds
+Sun Mar 21 18:28:43 2021 rnb1kbnr/pp1pp2p/2p3p1/4q3/8/2P2N2/PP2BPPP/RNBQK2R b KQkq - 1 7
+Sun Mar 21 18:28:43 2021 depth 1 score cp 138 time 1 nodes 1 pv e5h5
+Sun Mar 21 18:28:43 2021 depth 2 score cp 127 time 255 nodes 260 pv e5h5 b1d2
+Sun Mar 21 18:28:43 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('f8g7'), Move.from_uci('f8h6'), Move.from_uci('e8d8'), Move.from_uci('e8f7'), Move.from_uci('b8a6'), Move.from_uci('e5g7'), Move.from_uci('e5c7'), Move.from_uci('e5f6'), Move.from_uci('e5e6'), Move.from_uci('e5d6'), Move.from_uci('e5h5'), Move.from_uci('e5g5'), Move.from_uci('e5f5'), Move.from_uci('e5d5'), Move.from_uci('e5c5'), Move.from_uci('e5b5'), Move.from_uci('e5a5'), Move.from_uci('e5f4'), Move.from_uci('e5e4'), Move.from_uci('e5d4'), Move.from_uci('e5g3'), Move.from_uci('e5e3'), Move.from_uci('e5c3'), Move.from_uci('e5h2'), Move.from_uci('e5e2'), Move.from_uci('h7h6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('g6g5'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:28:43 2021 selected move: [127.5, Move.from_uci('e5h5'), 2, 0.2546234130859375]
+Sun Mar 21 18:28:43 2021 nps: 1011.618840, nodes: 260, tt_hits: 5.000000%, avg bco index: 0.75
+Sun Mar 21 18:28:43 2021 time is up
+Sun Mar 21 18:28:43 2021 OUT: bestmove e5h5
+Sun Mar 21 18:29:06 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5 d8a5 c2c3 a5e5 f1e2 g7g6 g1f3 e5h5 f3g5
+Sun Mar 21 18:29:06 2021 IN: go movetime 500
+Sun Mar 21 18:29:06 2021 time is up
+Sun Mar 21 18:29:06 2021 search for 0.500000 seconds
+Sun Mar 21 18:29:06 2021 rnb1kbnr/pp1pp2p/2p3p1/6Nq/8/2P5/PP2BPPP/RNBQK2R b KQkq - 3 8
+Sun Mar 21 18:29:06 2021 depth 1 score cp 141 time 53 nodes 49 pv h5h6
+Sun Mar 21 18:29:06 2021 depth 2 score cp 133 time 303 nodes 316 pv h5h6 e1g1
+Sun Mar 21 18:29:06 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('f8g7'), Move.from_uci('f8h6'), Move.from_uci('e8d8'), Move.from_uci('b8a6'), Move.from_uci('h5h6'), Move.from_uci('h5g5'), Move.from_uci('h5h4'), Move.from_uci('h5g4'), Move.from_uci('h5h3'), Move.from_uci('h5f3'), Move.from_uci('h5h2'), Move.from_uci('h5e2'), Move.from_uci('h7h6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('c6c5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:29:06 2021 selected move: [133.75, Move.from_uci('h5h6'), 2, 0.3024568557739258]
+Sun Mar 21 18:29:06 2021 nps: 1035.188975, nodes: 316, tt_hits: 3.846154%, avg bco index: 0.69
+Sun Mar 21 18:29:06 2021 time is up
+Sun Mar 21 18:29:06 2021 OUT: bestmove h5h6
+Sun Mar 21 18:30:00 2021 time is up
+Sun Mar 21 18:30:17 2021 Set TT size to 8192 entries 
+Sun Mar 21 18:30:18 2021 stdin thread started
+Sun Mar 21 18:30:18 2021 IN: uci
+Sun Mar 21 18:30:18 2021 OUT: id name Feeks
+Sun Mar 21 18:30:18 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Mar 21 18:30:18 2021 OUT: uciok
+Sun Mar 21 18:30:26 2021 IN: ucinewgame
+Sun Mar 21 18:30:26 2021 IN: isready
+Sun Mar 21 18:30:26 2021 OUT: readyok
+Sun Mar 21 18:30:26 2021 IN: position startpos moves e2e4
+Sun Mar 21 18:30:26 2021 IN: go movetime 500
+Sun Mar 21 18:30:26 2021 OUT: info string waiting for init thread
+Sun Mar 21 18:30:26 2021 OUT: info string initialized
+Sun Mar 21 18:30:26 2021 search for 0.500000 seconds
+Sun Mar 21 18:30:26 2021 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+Sun Mar 21 18:30:26 2021 depth 1 score cp 42 time 21 nodes 21 pv f7f6
+Sun Mar 21 18:30:26 2021 depth 2 score cp 30 time 128 nodes 135 pv f7f6 g1f3
+Sun Mar 21 18:30:26 2021 depth 3 score cp 35 time 400 nodes 476 pv f7f6 g1f3 c7c6
+Sun Mar 21 18:30:26 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:30:26 2021 selected move: [35.0, Move.from_uci('f7f6'), 3, 0.3991222381591797]
+Sun Mar 21 18:30:26 2021 nps: 1182.901133, nodes: 476, tt_hits: 18.987342%, avg bco index: 0.38
+Sun Mar 21 18:30:26 2021 time is up
+Sun Mar 21 18:30:26 2021 OUT: bestmove f7f6
+Sun Mar 21 18:30:37 2021 IN: position startpos moves e2e4 f7f6 d2d4
+Sun Mar 21 18:30:37 2021 IN: go movetime 500
+Sun Mar 21 18:30:37 2021 time is up
+Sun Mar 21 18:30:37 2021 search for 0.500000 seconds
+Sun Mar 21 18:30:37 2021 rnbqkbnr/ppppp1pp/5p2/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2
+Sun Mar 21 18:30:37 2021 depth 1 score cp 37 time 21 nodes 20 pv c7c6
+Sun Mar 21 18:30:37 2021 depth 2 score cp 25 time 142 nodes 143 pv c7c6 g1f3
+Sun Mar 21 18:30:38 2021 depth 3 score cp 28 time 466 nodes 507 pv c7c6 g1f3 g7g6
+Sun Mar 21 18:30:38 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('e8f7'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:30:38 2021 selected move: [28.75, Move.from_uci('c7c6'), 3, 0.4658501148223877]
+Sun Mar 21 18:30:38 2021 nps: 1080.245078, nodes: 507, tt_hits: 17.045455%, avg bco index: 0.46
+Sun Mar 21 18:30:38 2021 time is up
+Sun Mar 21 18:30:38 2021 OUT: bestmove c7c6
+Sun Mar 21 18:30:45 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 d4d5
+Sun Mar 21 18:30:45 2021 IN: go movetime 500
+Sun Mar 21 18:30:45 2021 time is up
+Sun Mar 21 18:30:45 2021 search for 0.500000 seconds
+Sun Mar 21 18:30:45 2021 rnbqkbnr/pp1pp1pp/2p2p2/3P4/4P3/8/PPP2PPP/RNBQKBNR b KQkq - 0 3
+Sun Mar 21 18:30:45 2021 depth 1 score cp 40 time 34 nodes 32 pv g7g6
+Sun Mar 21 18:30:45 2021 depth 2 score cp 37 time 259 nodes 280 pv c6d5 d1d5
+Sun Mar 21 18:30:45 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('e8f7'), Move.from_uci('d8c7'), Move.from_uci('d8b6'), Move.from_uci('d8a5'), Move.from_uci('b8a6'), Move.from_uci('c6d5'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:30:45 2021 selected move: [37.5, Move.from_uci('c6d5'), 2, 0.258986234664917]
+Sun Mar 21 18:30:45 2021 nps: 1071.209118, nodes: 280, tt_hits: 9.090909%, avg bco index: 0.45
+Sun Mar 21 18:30:45 2021 time is up
+Sun Mar 21 18:30:45 2021 OUT: bestmove c6d5
+Sun Mar 21 18:30:57 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 d4d5 c6d5 e4d5
+Sun Mar 21 18:30:57 2021 IN: go movetime 500
+Sun Mar 21 18:30:57 2021 time is up
+Sun Mar 21 18:30:57 2021 search for 0.500000 seconds
+Sun Mar 21 18:30:57 2021 rnbqkbnr/pp1pp1pp/5p2/3P4/8/8/PPP2PPP/RNBQKBNR b KQkq - 0 4
+Sun Mar 21 18:30:57 2021 depth 1 score cp 42 time 25 nodes 23 pv g7g6
+Sun Mar 21 18:30:57 2021 depth 2 score cp 30 time 147 nodes 142 pv g7g6 g1f3
+Sun Mar 21 18:30:57 2021 depth 3 score cp 33 time 459 nodes 500 pv g7g6 g1f3 b7b6
+Sun Mar 21 18:30:57 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('e8f7'), Move.from_uci('d8c7'), Move.from_uci('d8b6'), Move.from_uci('d8a5'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:30:57 2021 selected move: [33.75, Move.from_uci('g7g6'), 3, 0.45897507667541504]
+Sun Mar 21 18:30:57 2021 nps: 1083.766438, nodes: 500, tt_hits: 16.279070%, avg bco index: 0.40
+Sun Mar 21 18:30:57 2021 time is up
+Sun Mar 21 18:30:57 2021 OUT: bestmove g7g6
+Sun Mar 21 18:31:07 2021 time is up
+Sun Mar 21 18:31:16 2021 Set TT size to 8192 entries 
+Sun Mar 21 18:31:16 2021 stdin thread started
+Sun Mar 21 18:31:16 2021 IN: uci
+Sun Mar 21 18:31:16 2021 OUT: id name Feeks
+Sun Mar 21 18:31:16 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Mar 21 18:31:16 2021 OUT: uciok
+Sun Mar 21 18:31:24 2021 IN: ucinewgame
+Sun Mar 21 18:31:24 2021 IN: isready
+Sun Mar 21 18:31:24 2021 OUT: readyok
+Sun Mar 21 18:31:24 2021 IN: position startpos moves e2e4
+Sun Mar 21 18:31:24 2021 IN: go movetime 500
+Sun Mar 21 18:31:24 2021 OUT: info string waiting for init thread
+Sun Mar 21 18:31:24 2021 OUT: info string initialized
+Sun Mar 21 18:31:24 2021 search for 0.500000 seconds
+Sun Mar 21 18:31:24 2021 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+Sun Mar 21 18:31:24 2021 depth 1 score cp 42 time 23 nodes 21 pv f7f6
+Sun Mar 21 18:31:24 2021 depth 2 score cp 30 time 131 nodes 135 pv f7f6 g1f3
+Sun Mar 21 18:31:25 2021 depth 3 score cp 35 time 402 nodes 476 pv f7f6 g1f3 c7c6
+Sun Mar 21 18:31:25 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:31:25 2021 selected move: [35.0, Move.from_uci('f7f6'), 3, 0.401963472366333]
+Sun Mar 21 18:31:25 2021 nps: 1173.646392, nodes: 476, tt_hits: 18.987342%, avg bco index: 0.38
+Sun Mar 21 18:31:25 2021 time is up
+Sun Mar 21 18:31:25 2021 OUT: bestmove f7f6
+Sun Mar 21 18:31:33 2021 IN: position startpos moves e2e4 f7f6 d2d4
+Sun Mar 21 18:31:33 2021 IN: go movetime 500
+Sun Mar 21 18:31:33 2021 time is up
+Sun Mar 21 18:31:33 2021 search for 0.500000 seconds
+Sun Mar 21 18:31:33 2021 rnbqkbnr/ppppp1pp/5p2/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2
+Sun Mar 21 18:31:33 2021 depth 1 score cp 37 time 21 nodes 20 pv c7c6
+Sun Mar 21 18:31:33 2021 depth 2 score cp 25 time 140 nodes 143 pv c7c6 g1f3
+Sun Mar 21 18:31:34 2021 depth 3 score cp 28 time 463 nodes 507 pv c7c6 g1f3 g7g6
+Sun Mar 21 18:31:34 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('e8f7'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:31:34 2021 selected move: [28.75, Move.from_uci('c7c6'), 3, 0.46268582344055176]
+Sun Mar 21 18:31:34 2021 nps: 1089.705393, nodes: 507, tt_hits: 17.045455%, avg bco index: 0.46
+Sun Mar 21 18:31:34 2021 time is up
+Sun Mar 21 18:31:34 2021 OUT: bestmove c7c6
+Sun Mar 21 18:31:44 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5
+Sun Mar 21 18:31:44 2021 IN: go movetime 500
+Sun Mar 21 18:31:44 2021 time is up
+Sun Mar 21 18:31:44 2021 search for 0.500000 seconds
+Sun Mar 21 18:31:44 2021 rnbqkbnr/pp1pp1pp/2p2p2/4P3/3P4/8/PPP2PPP/RNBQKBNR b KQkq - 0 3
+Sun Mar 21 18:31:44 2021 depth 1 score cp 40 time 44 nodes 40 pv g7g6
+Sun Mar 21 18:31:44 2021 depth 2 score cp 38 time 265 nodes 288 pv f6e5 d4e5
+Sun Mar 21 18:31:44 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('e8f7'), Move.from_uci('d8c7'), Move.from_uci('d8b6'), Move.from_uci('d8a5'), Move.from_uci('b8a6'), Move.from_uci('f6e5'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:31:44 2021 selected move: [38.75, Move.from_uci('f6e5'), 2, 0.2640712261199951]
+Sun Mar 21 18:31:44 2021 nps: 1078.809833, nodes: 288, tt_hits: 9.090909%, avg bco index: 0.42
+Sun Mar 21 18:31:44 2021 time is up
+Sun Mar 21 18:31:44 2021 OUT: bestmove f6e5
+Sun Mar 21 18:31:53 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5
+Sun Mar 21 18:31:53 2021 IN: go movetime 500
+Sun Mar 21 18:31:53 2021 time is up
+Sun Mar 21 18:31:53 2021 search for 0.500000 seconds
+Sun Mar 21 18:31:53 2021 rnbqkbnr/pp1pp1pp/2p5/4P3/8/8/PPP2PPP/RNBQKBNR b KQkq - 0 4
+Sun Mar 21 18:31:53 2021 depth 1 score cp 118 time 83 nodes 83 pv d8a5
+Sun Mar 21 18:31:53 2021 depth 2 score cp 118 time 221 nodes 231 pv d8a5 b1c3
+Sun Mar 21 18:31:54 2021 depth 3 score cp 118 time 367 nodes 408 pv d8a5 b1c3 a5e5
+Sun Mar 21 18:31:54 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('e8f7'), Move.from_uci('d8c7'), Move.from_uci('d8b6'), Move.from_uci('d8a5'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:31:54 2021 selected move: [118.75, Move.from_uci('d8a5'), 3, 0.3667464256286621]
+Sun Mar 21 18:31:54 2021 nps: 1104.347583, nodes: 408, tt_hits: 18.918919%, avg bco index: 0.42
+Sun Mar 21 18:31:54 2021 time is up
+Sun Mar 21 18:31:54 2021 OUT: bestmove d8a5
+Sun Mar 21 18:32:02 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5 d8a5 c2c3
+Sun Mar 21 18:32:02 2021 IN: go movetime 500
+Sun Mar 21 18:32:02 2021 time is up
+Sun Mar 21 18:32:02 2021 search for 0.500000 seconds
+Sun Mar 21 18:32:02 2021 rnb1kbnr/pp1pp1pp/2p5/q3P3/8/2P5/PP3PPP/RNBQKBNR b KQkq - 0 5
+Sun Mar 21 18:32:02 2021 depth 1 score cp 136 time 46 nodes 42 pv a5e5
+Sun Mar 21 18:32:03 2021 depth 2 score cp 136 time 223 nodes 207 pv a5e5 g1e2
+Sun Mar 21 18:32:03 2021 depth 3 score cp 140 time 382 nodes 367 pv a5e5 g1e2 g7g6
+Sun Mar 21 18:32:03 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('e8d8'), Move.from_uci('e8f7'), Move.from_uci('b8a6'), Move.from_uci('a5d8'), Move.from_uci('a5c7'), Move.from_uci('a5b6'), Move.from_uci('a5a6'), Move.from_uci('a5e5'), Move.from_uci('a5d5'), Move.from_uci('a5c5'), Move.from_uci('a5b5'), Move.from_uci('a5b4'), Move.from_uci('a5a4'), Move.from_uci('a5c3'), Move.from_uci('a5a3'), Move.from_uci('a5a2'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('d7d5'), Move.from_uci('b7b5')]
+Sun Mar 21 18:32:03 2021 selected move: [140.0, Move.from_uci('a5e5'), 3, 0.3810744285583496]
+Sun Mar 21 18:32:03 2021 nps: 956.763823, nodes: 367, tt_hits: 17.777778%, avg bco index: 0.58
+Sun Mar 21 18:32:03 2021 time is up
+Sun Mar 21 18:32:03 2021 OUT: bestmove a5e5
+Sun Mar 21 18:32:15 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5 d8a5 c2c3 a5e5 f1e2
+Sun Mar 21 18:32:15 2021 IN: go movetime 500
+Sun Mar 21 18:32:15 2021 time is up
+Sun Mar 21 18:32:15 2021 search for 0.500000 seconds
+Sun Mar 21 18:32:15 2021 rnb1kbnr/pp1pp1pp/2p5/4q3/8/2P5/PP2BPPP/RNBQK1NR b KQkq - 1 6
+Sun Mar 21 18:32:15 2021 depth 1 score cp 148 time 41 nodes 42 pv g7g6
+Sun Mar 21 18:32:15 2021 depth 2 score cp 136 time 237 nodes 243 pv g7g6 g1f3
+Sun Mar 21 18:32:15 2021 time is up
+Sun Mar 21 18:32:15 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('e8d8'), Move.from_uci('e8f7'), Move.from_uci('b8a6'), Move.from_uci('e5c7'), Move.from_uci('e5f6'), Move.from_uci('e5e6'), Move.from_uci('e5d6'), Move.from_uci('e5h5'), Move.from_uci('e5g5'), Move.from_uci('e5f5'), Move.from_uci('e5d5'), Move.from_uci('e5c5'), Move.from_uci('e5b5'), Move.from_uci('e5a5'), Move.from_uci('e5f4'), Move.from_uci('e5e4'), Move.from_uci('e5d4'), Move.from_uci('e5g3'), Move.from_uci('e5e3'), Move.from_uci('e5c3'), Move.from_uci('e5h2'), Move.from_uci('e5e2'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:32:15 2021 selected move: [136.25, Move.from_uci('g7g6'), 2, 0.5056633949279785]
+Sun Mar 21 18:32:15 2021 nps: 1049.801426, nodes: 532, tt_hits: 11.111111%, avg bco index: 0.80
+Sun Mar 21 18:32:15 2021 time is up
+Sun Mar 21 18:32:15 2021 OUT: bestmove g7g6
+Sun Mar 21 18:32:32 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5 d8a5 c2c3 a5e5 f1e2 g7g6 g1f3
+Sun Mar 21 18:32:32 2021 IN: go movetime 500
+Sun Mar 21 18:32:32 2021 time is up
+Sun Mar 21 18:32:32 2021 search for 0.500000 seconds
+Sun Mar 21 18:32:32 2021 rnb1kbnr/pp1pp2p/2p3p1/4q3/8/2P2N2/PP2BPPP/RNBQK2R b KQkq - 1 7
+Sun Mar 21 18:32:32 2021 depth 1 score cp 138 time 1 nodes 1 pv e5h5
+Sun Mar 21 18:32:32 2021 depth 2 score cp 127 time 266 nodes 260 pv e5h5 b1d2
+Sun Mar 21 18:32:32 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('f8g7'), Move.from_uci('f8h6'), Move.from_uci('e8d8'), Move.from_uci('e8f7'), Move.from_uci('b8a6'), Move.from_uci('e5g7'), Move.from_uci('e5c7'), Move.from_uci('e5f6'), Move.from_uci('e5e6'), Move.from_uci('e5d6'), Move.from_uci('e5h5'), Move.from_uci('e5g5'), Move.from_uci('e5f5'), Move.from_uci('e5d5'), Move.from_uci('e5c5'), Move.from_uci('e5b5'), Move.from_uci('e5a5'), Move.from_uci('e5f4'), Move.from_uci('e5e4'), Move.from_uci('e5d4'), Move.from_uci('e5g3'), Move.from_uci('e5e3'), Move.from_uci('e5c3'), Move.from_uci('e5h2'), Move.from_uci('e5e2'), Move.from_uci('h7h6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('g6g5'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:32:32 2021 selected move: [127.5, Move.from_uci('e5h5'), 2, 0.2651503086090088]
+Sun Mar 21 18:32:32 2021 nps: 971.310146, nodes: 260, tt_hits: 5.000000%, avg bco index: 0.75
+Sun Mar 21 18:32:32 2021 time is up
+Sun Mar 21 18:32:32 2021 OUT: bestmove e5h5
+Sun Mar 21 18:32:41 2021 IN: position startpos moves e2e4 f7f6 d2d4 c7c6 e4e5 f6e5 d4e5 d8a5 c2c3 a5e5 f1e2 g7g6 g1f3 e5h5 f3g5
+Sun Mar 21 18:32:41 2021 IN: go movetime 500
+Sun Mar 21 18:32:41 2021 time is up
+Sun Mar 21 18:32:41 2021 search for 0.500000 seconds
+Sun Mar 21 18:32:41 2021 rnb1kbnr/pp1pp2p/2p3p1/6Nq/8/2P5/PP2BPPP/RNBQK2R b KQkq - 3 8
+Sun Mar 21 18:32:41 2021 depth 1 score cp 141 time 51 nodes 49 pv h5h6
+Sun Mar 21 18:32:42 2021 depth 2 score cp 133 time 302 nodes 316 pv h5h6 e1g1
+Sun Mar 21 18:32:42 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('f8g7'), Move.from_uci('f8h6'), Move.from_uci('e8d8'), Move.from_uci('b8a6'), Move.from_uci('h5h6'), Move.from_uci('h5g5'), Move.from_uci('h5h4'), Move.from_uci('h5g4'), Move.from_uci('h5h3'), Move.from_uci('h5f3'), Move.from_uci('h5h2'), Move.from_uci('h5e2'), Move.from_uci('h7h6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('c6c5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 18:32:42 2021 selected move: [133.75, Move.from_uci('h5h6'), 2, 0.30189061164855957]
+Sun Mar 21 18:32:42 2021 nps: 1033.750997, nodes: 316, tt_hits: 3.846154%, avg bco index: 0.69
+Sun Mar 21 18:32:42 2021 time is up
+Sun Mar 21 18:32:42 2021 OUT: bestmove h5h6
+Sun Mar 21 19:00:05 2021 time is up
+Sun Mar 21 19:00:22 2021 Set TT size to 8192 entries 
+Sun Mar 21 19:00:22 2021 stdin thread started
+Sun Mar 21 19:00:22 2021 IN: uci
+Sun Mar 21 19:00:22 2021 OUT: id name Feeks
+Sun Mar 21 19:00:22 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Mar 21 19:00:22 2021 OUT: uciok
+Sun Mar 21 19:00:38 2021 IN: ucinewgame
+Sun Mar 21 19:00:38 2021 IN: isready
+Sun Mar 21 19:00:38 2021 OUT: readyok
+Sun Mar 21 19:00:38 2021 IN: position startpos moves e2e4
+Sun Mar 21 19:00:38 2021 IN: go movetime 500
+Sun Mar 21 19:00:38 2021 OUT: info string waiting for init thread
+Sun Mar 21 19:00:38 2021 OUT: info string initialized
+Sun Mar 21 19:00:38 2021 search for 0.500000 seconds
+Sun Mar 21 19:00:38 2021 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+Sun Mar 21 19:00:38 2021 depth 1 score cp 42 time 24 nodes 21 pv f7f6
+Sun Mar 21 19:00:38 2021 depth 2 score cp 30 time 137 nodes 135 pv f7f6 g1f3
+Sun Mar 21 19:00:38 2021 depth 3 score cp 35 time 423 nodes 476 pv f7f6 g1f3 c7c6
+Sun Mar 21 19:00:38 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 19:00:38 2021 selected move: [35.0, Move.from_uci('f7f6'), 3, 0.422044038772583]
+Sun Mar 21 19:00:38 2021 nps: 1118.015697, nodes: 476, tt_hits: 18.987342%, avg bco index: 0.38
+Sun Mar 21 19:00:38 2021 time is up
+Sun Mar 21 19:00:38 2021 OUT: bestmove f7f6
+Sun Mar 21 19:01:00 2021 IN: position startpos moves e2e4 f7f6 d1g4
+Sun Mar 21 19:01:00 2021 IN: go movetime 500
+Sun Mar 21 19:01:00 2021 time is up
+Sun Mar 21 19:01:00 2021 search for 0.500000 seconds
+Sun Mar 21 19:01:00 2021 rnbqkbnr/ppppp1pp/5p2/8/4P1Q1/8/PPPP1PPP/RNB1KBNR b KQkq - 1 2
+Sun Mar 21 19:01:00 2021 depth 1 score cp 46 time 23 nodes 20 pv c7c6
+Sun Mar 21 19:01:00 2021 depth 2 score cp 37 time 289 nodes 302 pv g8h6 g4f4
+Sun Mar 21 19:01:00 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('e8f7'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 19:01:00 2021 selected move: [37.5, Move.from_uci('g8h6'), 2, 0.28896570205688477]
+Sun Mar 21 19:01:00 2021 nps: 1037.470429, nodes: 302, tt_hits: 9.523810%, avg bco index: 0.91
+Sun Mar 21 19:01:00 2021 time is up
+Sun Mar 21 19:01:00 2021 OUT: bestmove g8h6
+Sun Mar 21 19:01:34 2021 IN: position startpos moves e2e4 f7f6 d1g4 g8h6 g4f4
+Sun Mar 21 19:01:34 2021 IN: go movetime 500
+Sun Mar 21 19:01:34 2021 time is up
+Sun Mar 21 19:01:34 2021 search for 0.500000 seconds
+Sun Mar 21 19:01:34 2021 rnbqkb1r/ppppp1pp/5p1n/8/4PQ2/8/PPPP1PPP/RNB1KBNR b KQkq - 3 3
+Sun Mar 21 19:01:34 2021 depth 1 score cp 42 time 26 nodes 22 pv c7c6
+Sun Mar 21 19:01:35 2021 depth 2 score cp 40 time 306 nodes 297 pv g7g5 f4f3
+Sun Mar 21 19:01:35 2021 valid moves: [Move.from_uci('h8g8'), Move.from_uci('e8f7'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h6g8'), Move.from_uci('h6f7'), Move.from_uci('h6f5'), Move.from_uci('h6g4'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Mar 21 19:01:35 2021 selected move: [40.0, Move.from_uci('g7g5'), 2, 0.3057551383972168]
+Sun Mar 21 19:01:35 2021 nps: 963.139525, nodes: 297, tt_hits: 4.347826%, avg bco index: 0.66
+Sun Mar 21 19:01:35 2021 time is up
+Sun Mar 21 19:01:35 2021 OUT: bestmove g7g5
+Sun Mar 21 19:02:13 2021 time is up

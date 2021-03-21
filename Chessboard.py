@@ -1,6 +1,6 @@
 #Variables to change stuff on a high level
 #Whether code is being run on the pi
-pi = False
+pi = True
 #Whether to display the input image
 display_input = False
 #Whether to wait for a keypress on each image or not
@@ -1105,6 +1105,10 @@ def main():
         #Update the variable of which side just went
         turn_background[2] = 1 - (counter % 2)
         
+        #If the wrong move was made for a computer match, wait here for user to correct before reading in a frame
+        if vs_comp:
+            cv2.waitKey(right_move)
+        
         #Read the current frame
         if pi:
             input_image = pi_take_image(camera)
@@ -1120,7 +1124,6 @@ def main():
         
         #Show the grayscale color detection image and piece detection image for the current image
         show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
-        cv2.waitKey(wrong_move)
         
         #Compare the color detection array of the current image with the last image to deterime the move that was made
         if not np.array_equal(old_color_array, new_color_array):
