@@ -1098,7 +1098,7 @@ def main():
     #-----------------------------------------LOOP
     run = True
     counter = 2
-    right_move
+    right_move = 1
     while run:
         #Start a timer to measure processing time for the current frame
         start = time.time()
