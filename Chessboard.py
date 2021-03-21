@@ -1,6 +1,6 @@
 #Variables to change stuff on a high level
 #Whether code is being run on the pi
-pi = False
+pi = True
 #Whether to display the input image
 display_input = False
 #Whether to wait for a keypress on each image or not
@@ -1093,22 +1093,20 @@ def main():
         show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
         #Compare the color detection array of the current image with the last image to deterime the move that was made
         move = color_array_to_uci(old_color_array, new_color_array, board)
-        
-        if not pi:
-            #Compute the move variable using the chess library
-            move = chess.Move.from_uci(move)
-            #If the move wasn't legal
-            if not (move in board.legal_moves):
-                #Print the move wasn't legal
-                print("Not legal")
-            #Update the board array to reflect the move that was just made
-            board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
-            #Push the move to the board
-            board.push(move)
-            #Update the chessboard gui
-            print_board(window, board_array, square_size)
-            #Replace the old color array with the current color array to prepare for the next frame
-            old_color_array = new_color_array
+        #Compute the move variable using the chess library
+        move = chess.Move.from_uci(move)
+        #If the move wasn't legal
+        if not (move in board.legal_moves):
+            #Print the move wasn't legal
+            print("Not legal")
+        #Update the board array to reflect the move that was just made
+        board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
+        #Push the move to the board
+        board.push(move)
+        #Update the chessboard gui
+        print_board(window, board_array, square_size)
+        #Replace the old color array with the current color array to prepare for the next frame
+        old_color_array = new_color_array
         
         #Print the move that was made and the time it took to process the frame
         print(move, time.time() - start)
