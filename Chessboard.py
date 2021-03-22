@@ -1,25 +1,34 @@
 #Variables to change stuff on a high level
-#Whether code is being run on the pi
-pi = True
 #Whether to display the input image
 display_input = False
 #Whether to wait for a keypress on each image or not
-wait = True
+wait = False
 #Whether to play against a computer
-vs_comp = True
+vs_comp = False
 #Which apriltags should be looked for
 #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
 tag_family = 'tag16h5'
-
+#Default edge_count_threshold, gets updated on first frame to better suit current conditions
 edge_count_threshold = 50000
+#File directory to get images from
+image_directory = 'TestingImages/PiImages/'
 
 #Importing needed libraries
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
-import chess, time, pygame, chess.engine, cv2, copy, math
+import chess, time, pygame, chess.engine, cv2, copy, math, os
 import numpy as np
 from apriltag import apriltag
+
+#If run on my laptop, disable pi specific code
+if (os.uname()[1] == "blemay360-Swift-SF314-53G"):
+    pi = False
+#Else enable pi code
+else:
+    pi = True
+
+#Import pi specific libraries
 if pi:
     from picamera.array import PiRGBArray
     from picamera import PiCamera
@@ -319,10 +328,18 @@ def get_detection_color_array(image, turn_background, first_frame=False):
 
     if first_frame:
         #Set new edge_count_threshold to be slightly smaller than the lowest edge count of an occupied square
-        edge_count_threshold = int(min(occupied_edge_count) * 0.8)
+        edge_count_threshold = int(min(occupied_edge_count) * 0.7)
     
     if (np.count_nonzero(detection_array) > (turn_background[0] + turn_background[1]) or np.count_nonzero(detection_array) < (turn_background[0] + turn_background[1] - 1)):
         print("Error detecting number of pieces on board")
+        print("Counted " + str(np.count_nonzero(detection_array)) + " pieces")
+        print("Expected " + str(turn_background[0] + turn_background[1]) + " or " + str((turn_background[0] + turn_background[1]) - 1) + " pieces")
+        print("Edge count threshold is " + str(edge_count_threshold))
+        print(detection_array)
+        print(edge_count)
+        show_images('resize', ("Piece Detection", detection_image))
+        cv2.waitKey(1)
+        
         #Maybe change the threshold here?
     
     #If one less piece is on the board in the current frame than the sum of pieces expected from both sides of the board
@@ -630,6 +647,7 @@ def process_frame(frame, turn_background, first_frame=False):
             cv2.waitKey(0)
     #If there are extra apriltags detected
     elif (len(detections) > 4):
+        #print("Detected Extra Apriltag")
         #Make a copy of the detection tuple as a list for easier sorting and deleting
         detection_list = list(detections)
         #Sort the detection list by descending confidence in the tag detection
@@ -650,6 +668,8 @@ def process_frame(frame, turn_background, first_frame=False):
         
         #Place circles on inside corners of each apriltag
         #circle_image(apriltagCorners, (lt, rt, rb, lb), 'red', 'picture')
+        #show_images('resize', ('Apriltag Corners', apriltagCorners))
+        #cv2.waitKey(0)
         
         #Shift perspective to make to make the inside corners of the apriltags the corners of the image
         shifted = perspective_shift(shifted, (lt, rt, lb, rb))
@@ -1056,8 +1076,13 @@ def main():
     #Print the chessboard to the window
     print_board(window, board_array, square_size)
     
-    #Desired difficulty of the computer
-    difficulty = 900
+    #Set desired difficulty of the computer
+    #If playing computer, use desired difficulty
+    if vs_comp:
+        difficulty = 900
+    #Otherwise use the max rated engine for best suggestions
+    else:
+        difficulty = 3000
      
     #Find and open the desired engine for the difficulty
     engine = open_engine(difficulty)
@@ -1073,7 +1098,7 @@ def main():
         input_image = pi_take_image(camera)
     else:
         #Read the first frame in
-        input_image = cv2.imread('TestingImages/LargeBoard/1.jpg')
+        input_image = cv2.imread(image_directory + '1.jpg')
         
     if display_input:
             #Show the input image
@@ -1113,7 +1138,7 @@ def main():
         if pi:
             input_image = pi_take_image(camera)
         else:
-            input_image = cv2.imread('TestingImages/LargeBoard/' + str(counter) + '.jpg')
+            input_image = cv2.imread(image_directory + str(counter) + '.jpg')
         
         #Process the current frame
         new_color_array, piece_detection, gray = process_frame(input_image, turn_background)
@@ -1147,7 +1172,7 @@ def main():
         if not (move in board.legal_moves):
             #Print the move wasn't legal
             print("Not legal")
-            continue
+            #continue
         
         #Update the board array to reflect the move that was just made
         board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
@@ -1177,12 +1202,17 @@ def main():
         #Update counter to know we're on the next frame
         counter += 1
         
+        if not pi:
+            max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
+        
         #If it's running from images and finishes the last image
-        if (counter == 7) and not pi:
+        if (counter == max_file_count) and not pi:
             #Stop running the program
+            print("Reached end of files")
             run = False
     
-    #When all images have been processed, wait 2 seconds to allow the user to decompress before ending
-    time.sleep(2)
+    engine.quit()
+    #When all images have been processed, wait 1 second to allow the user to decompress before ending
+    time.sleep(1)
 
 main()

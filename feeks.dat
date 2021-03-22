@@ -1373,3 +1373,52 @@ Sun Mar 21 19:01:35 2021 nps: 963.139525, nodes: 297, tt_hits: 4.347826%, avg bc
 Sun Mar 21 19:01:35 2021 time is up
 Sun Mar 21 19:01:35 2021 OUT: bestmove g7g5
 Sun Mar 21 19:02:13 2021 time is up
+Mon Mar 22 11:37:57 2021 Set TT size to 8192 entries 
+Mon Mar 22 11:37:57 2021 stdin thread started
+Mon Mar 22 11:37:57 2021 IN: uci
+Mon Mar 22 11:37:57 2021 OUT: id name Feeks
+Mon Mar 22 11:37:57 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Mon Mar 22 11:37:57 2021 OUT: uciok
+Mon Mar 22 11:39:08 2021 Set TT size to 8192 entries 
+Mon Mar 22 11:39:08 2021 stdin thread started
+Mon Mar 22 11:39:08 2021 IN: uci
+Mon Mar 22 11:39:08 2021 OUT: id name Feeks
+Mon Mar 22 11:39:08 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Mon Mar 22 11:39:08 2021 OUT: uciok
+Mon Mar 22 11:40:42 2021 Set TT size to 8192 entries 
+Mon Mar 22 11:40:42 2021 stdin thread started
+Mon Mar 22 11:40:42 2021 IN: uci
+Mon Mar 22 11:40:42 2021 OUT: id name Feeks
+Mon Mar 22 11:40:42 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Mon Mar 22 11:40:42 2021 OUT: uciok
+Mon Mar 22 11:41:48 2021 Set TT size to 8192 entries 
+Mon Mar 22 11:41:48 2021 stdin thread started
+Mon Mar 22 11:41:48 2021 IN: uci
+Mon Mar 22 11:41:48 2021 OUT: id name Feeks
+Mon Mar 22 11:41:48 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Mon Mar 22 11:41:48 2021 OUT: uciok
+Mon Mar 22 11:41:51 2021 IN: ucinewgame
+Mon Mar 22 11:41:51 2021 IN: isready
+Mon Mar 22 11:41:51 2021 OUT: readyok
+Mon Mar 22 11:41:51 2021 IN: position startpos moves e2e4
+Mon Mar 22 11:41:51 2021 IN: go movetime 500
+Mon Mar 22 11:41:51 2021 OUT: info string waiting for init thread
+Mon Mar 22 11:41:51 2021 OUT: info string initialized
+Mon Mar 22 11:41:51 2021 search for 0.500000 seconds
+Mon Mar 22 11:41:51 2021 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+Mon Mar 22 11:41:51 2021 depth 1 score cp 42 time 6 nodes 21 pv f7f6
+Mon Mar 22 11:41:51 2021 depth 2 score cp 30 time 34 nodes 135 pv f7f6 g1f3
+Mon Mar 22 11:41:51 2021 depth 3 score cp 35 time 91 nodes 476 pv f7f6 g1f3 c7c6
+Mon Mar 22 11:41:52 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Mon Mar 22 11:41:52 2021 selected move: [35.0, Move.from_uci('f7f6'), 3, 0.5054187774658203]
+Mon Mar 22 11:41:52 2021 nps: 5450.918785, nodes: 2756, tt_hits: 20.253165%, avg bco index: 0.84
+Mon Mar 22 11:41:52 2021 time is up
+Mon Mar 22 11:41:52 2021 time is up
+Mon Mar 22 11:41:52 2021 OUT: bestmove f7f6
+Mon Mar 22 11:42:00 2021 time is up
+Mon Mar 22 11:43:50 2021 Set TT size to 8192 entries 
+Mon Mar 22 11:43:50 2021 stdin thread started
+Mon Mar 22 11:43:51 2021 IN: uci
+Mon Mar 22 11:43:51 2021 OUT: id name Feeks
+Mon Mar 22 11:43:51 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Mon Mar 22 11:43:51 2021 OUT: uciok
