@@ -1,6 +1,6 @@
 #Variables to change stuff on a high level
 #Whether to display the input image
-display_input = False
+display_input = True
 #Whether to wait for a keypress on each image or not
 wait = False
 #Whether to play against a computer
@@ -228,7 +228,7 @@ def show_images(*arg):
             cv2.imshow(arg[i][0], arg[i][1])
 
 #-----------------------------------------IMAGE DETECTION FUNCTIONS
-def perspective_shift(image, corners):
+def perspective_shift(image, corners, square=True):
     '''
     Function to perform a perspectivve shift on an image
     Used to cut out unnecessary parts of the image and just focus on the chessboard, as well as make sectioning the chessboard easier
@@ -237,16 +237,23 @@ def perspective_shift(image, corners):
     '''
     #Measure the distance of each size of the chessboard and keep the maximum length
     distance = max(measure_distance(corners[0], corners[1]), measure_distance(corners[1], corners[2]), measure_distance(corners[2], corners[3]), measure_distance(corners[3], corners[0]))
-        
+    if not square:
+        width_distance = max(measure_distance(corners[0], corners[1]), measure_distance(corners[2], corners[3]))
+        height_distance = max(measure_distance(corners[0], corners[2]), measure_distance(corners[1], corners[3]))
+    
     #Convert the input corner coordinates to float
     pts1 = np.float32(corners)
     #Set the size of the output image to be the maximum chess side length of pixels from the input image and convert to float
     pts2 = np.float32([[0,0],[distance,0],[0,distance],[distance,distance]])
+    if not square:
+        pts2 = np.float32([[0,0],[width_distance,0],[0,height_distance],[width_distance,height_distance]])
     
     #Get matrix with which to shift the image using the coordinates of corners from the input image and the coordinates of where those points should be in the output image
     M = cv2.getPerspectiveTransform(pts1,pts2)
     #Perform perspective shift
     shifted_image = cv2.warpPerspective(image, M, (distance,distance))
+    if not square:
+        shifted_image = cv2.warpPerspective(image, M, (width_distance,height_distance))
     
     return shifted_image
 
@@ -618,6 +625,40 @@ def average_color(image, x, y, radius):
     
     return color_measure, color
 
+def edge_clear(image, detections):
+    display = False
+    #(190, 170, 133)
+    lt = parse_april_tag_coordinate(detections, 3, 'lb')
+    rt = parse_april_tag_coordinate(detections, 2, 'rb')
+    rb = parse_april_tag_coordinate(detections, 2, 'rt')
+    lb = parse_april_tag_coordinate(detections, 3, 'lt')
+   
+    image = perspective_shift(image, (lt, rt, lb, rb), False)
+    
+    where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)[:,:,0]
+    
+    where_gold = cv2.inRange(where_gold, 10, 40)
+        
+    if display:
+        #Set the window to be able to be resized
+        cv2.namedWindow("Lines", cv2.WINDOW_NORMAL)
+        #Resize the window to 200 by 200 pixels
+        cv2.resizeWindow("Lines", 700,700)
+        #Show the image
+        cv2.imshow("Lines", where_gold)
+        #Wait for keypress
+        cv2.waitKey(1)
+        
+    #print(np.count_nonzero(where_gold))
+    
+    if np.count_nonzero(where_gold) < 50000:
+        output = False
+    else:
+        output = True
+
+    return output
+    
+
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTION
 def process_frame(frame, turn_background, first_frame=False):
     #Whether to automaticallly focus on the middle of the image or not
@@ -670,7 +711,7 @@ def process_frame(frame, turn_background, first_frame=False):
         #print("Detected Extra Apriltag")
         #Make a copy of the detection tuple as a list for easier sorting and deleting
         detection_list = list(detections)
-        #Sort the detection list by descending confidence in the tag detection
+        #Sort the detection list by ascending tag id
         detection_list.sort(reverse=True, key=return_tag_margin)
         #For all the detected tags over 4
         for i in range(len(detections) - 4):
@@ -690,6 +731,8 @@ def process_frame(frame, turn_background, first_frame=False):
         #circle_image(apriltagCorners, (lt, rt, rb, lb), 'red', 'picture')
         #show_images('resize', ('Apriltag Corners', apriltagCorners))
         #cv2.waitKey(0)
+                
+        print(edge_clear(frame, detections))
         
         #Shift perspective to make to make the inside corners of the apriltags the corners of the image
         shifted = perspective_shift(shifted, (lt, rt, lb, rb))
