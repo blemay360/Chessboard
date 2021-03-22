@@ -1204,6 +1204,8 @@ def main():
         
         if not pi:
             max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
+        else:
+            max_file_count == 0
         
         #If it's running from images and finishes the last image
         if (counter == max_file_count) and not pi:
