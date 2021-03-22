@@ -17,7 +17,7 @@ image_directory = 'TestingImages/PiImages/'
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
-import chess, time, pygame, chess.engine, cv2, copy, math, os
+import chess, time, pygame, chess.engine, cv2, copy, math, os, sys
 import numpy as np
 from apriltag import apriltag
 
@@ -44,6 +44,10 @@ Add adaptive thresholding to get_detection_array
 ?Make new function for processing first image
 '''
 
+def end_program():
+    global engine
+    engine.quit()
+
 #-----------------------------------------APRILTAG FUNCTIONS
 def detect_apriltags(family, image):
     '''
@@ -66,6 +70,16 @@ def parse_april_tag_coordinate(detections, tag_id, corner ='center'):
     Function to easily parse the apriltag detection array
     Takes in the detection array, the desired tag to get info for, as well as the desired vertex to get the coordinates for
     '''
+    
+    index = None
+    for tag in range(len(detections)):
+        if (detections[tag]['id'] == tag_id):
+            index = tag
+            
+    if (index == None):
+        print("Error finding apriltag " + str(tag_id))
+        return None
+    
     #If the corner variable isn't there or is 'center'
     if (corner == 'center'):
         #Set x value of the center coordinate
@@ -85,6 +99,7 @@ def parse_april_tag_coordinate(detections, tag_id, corner ='center'):
     return output
 
 def grab_inside_corners(detections):
+    global run
     '''
     Function for returning the inner coordinates of the apriltags on the chessboard
     Takes the detection array in as an input, and uses the parse_april_tag_coordinate function to get the corner coordinates of each tag
@@ -94,7 +109,12 @@ def grab_inside_corners(detections):
     rt = parse_april_tag_coordinate(detections, 1, 'lb')
     rb = parse_april_tag_coordinate(detections, 3, 'lt')
     lb = parse_april_tag_coordinate(detections, 2, 'rt')
-    return lb, rb, rt, lt
+    output = (lb, rb, rt, lt)
+    if (any(map(lambda elem: elem is None, output))):
+        end_program()
+        raise Exception("Error finding all four apriltags") 
+        sys.exit()
+    return output
 
 def grab_outside_corners(detections):
     '''
@@ -1064,6 +1084,7 @@ def pi_take_image(camera):
     
 #-----------------------------------------MAIN FUNCTION
 def main():
+    global engine
     #Create a gui to display the state of the chessboard, saving the window it creates and the size of each square in the chessboard for later functions
     window, square_size = create_gui()
 
