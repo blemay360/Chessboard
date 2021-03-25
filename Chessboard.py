@@ -764,17 +764,47 @@ def edge_clear(image, detections):
         #Show the image
         cv2.imshow("Edge pattern", where_gold)
         #Wait for keypress
-        cv2.waitKey(0)
+        cv2.waitKey(1)
         
     #print(np.count_nonzero(where_gold))
     #Got 324054 on a trial
     
-    linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 150, None, 50, 10)
+    linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 1000, None, 50, 10)
     
+    continuous_gold_border = [0] * 4
+        
     if linesP is not None:
         for i in range(0, len(linesP)):
             l = linesP[i][0]
-            cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
+            start = (l[0], l[1])
+            end = (l[2], l[3])
+            #Left side
+            if (l[0] < where_gold.shape[0]/division):
+                distance = measure_distance(start, end)
+                if (distance > continuous_gold_border[0]):
+                    continuous_gold_border[0] = distance
+                cv2.line(image, (l[0], l[1]), (l[2], l[3]), (50,127,205), 3, cv2.LINE_AA)
+            #Right side
+            elif (l[0] > (division - 1) * where_gold.shape[0]/division):
+                distance = measure_distance(start, end)
+                if (distance > continuous_gold_border[1]):
+                    continuous_gold_border[1] = distance
+                cv2.line(image, (l[0], l[1]), (l[2], l[3]), (255,0,0), 3, cv2.LINE_AA)
+            #Top side
+            elif (l[1] < where_gold.shape[1]/division):
+                distance = measure_distance(start, end)
+                if (distance > continuous_gold_border[2]):
+                    continuous_gold_border[2] = distance
+                cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,255,0), 3, cv2.LINE_AA)
+            #Bottom side
+            elif (l[1] > (division - 1) * where_gold.shape[1]/division):
+                distance = measure_distance(start, end)
+                if (distance > continuous_gold_border[3]):
+                    continuous_gold_border[3] = distance
+                cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
+
+    print(where_gold.shape[0] * (division - 3)/division, continuous_gold_border)
+    print(all(ele > where_gold.shape[0] * (division - 3)/division for ele in continuous_gold_border))
     
     if display:
         #Set the window to be able to be resized
