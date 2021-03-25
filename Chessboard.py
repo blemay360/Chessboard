@@ -2,9 +2,9 @@
 #Whether to display the input image
 display_input = False
 #Whether to wait for a keypress on each image or not
-wait = False
+wait = True
 #Whether to play against a computer
-vs_comp = False
+vs_comp = True
 #Which apriltags should be looked for
 #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
 tag_family = 'tag16h5'
@@ -23,9 +23,11 @@ from apriltag import apriltag
 
 #If run on my laptop, disable pi specific code
 if (os.uname()[1] == "blemay360-Swift-SF314-53G"):
+    #print("Running on laptop")
     pi = False
 #Else enable pi code
 else:
+    #print("Running on pi")
     pi = True
 
 #Import pi specific libraries
@@ -734,7 +736,7 @@ def average_color(image, x, y, radius):
     return color_measure, color
 
 def edge_clear(image, detections):
-    display = False
+    display = True
     #(190, 170, 133)
    
     #Crop and perspective shift image using the outside corners of the apriltags
@@ -754,8 +756,11 @@ def edge_clear(image, detections):
     if display:
         #Set the window to be able to be resized
         cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
-        #Resize the window to 200 by 200 pixels
-        cv2.resizeWindow("Edge pattern", 700,700)
+        #Resize the window
+        if pi:
+            cv2.resizeWindow("Edge pattern", 200, 200)
+        else:
+            cv2.resizeWindow("Edge pattern", 700,700)
         #Show the image
         cv2.imshow("Edge pattern", where_gold)
         #Wait for keypress
@@ -764,10 +769,32 @@ def edge_clear(image, detections):
     #print(np.count_nonzero(where_gold))
     #Got 324054 on a trial
     
-    if np.count_nonzero(where_gold) < 610000:
+    linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 150, None, 50, 10)
+    
+    if linesP is not None:
+        for i in range(0, len(linesP)):
+            l = linesP[i][0]
+            cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
+    
+    if display:
+        #Set the window to be able to be resized
+        cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
+        #Resize the window
+        if pi:
+            cv2.resizeWindow("Edge pattern", 200, 200)
+        else:
+            cv2.resizeWindow("Edge pattern", 700,700)
+        #Show the image
+        cv2.imshow("Edge pattern", image)
+        #Wait for keypress
+        cv2.waitKey(0)
+    
+    if np.count_nonzero(where_gold) < 70000:
         output = False
     else:
         output = True
+
+    output = True
 
     return output
 
@@ -793,7 +820,7 @@ def process_frame(frame, turn_background, first_frame, previous_detections=False
     #If 4 apriltags are seen (one in each 4 corners of chessboard), crop image and run detection functions
     if detections and valid_frame:        
         #Place circles on inside corners of each apriltag
-        #circle_image(apriltagCorners, (lt, rt, rb, lb), 'red', 'picture')
+        #circle_image(apriltagCorners, grab_inside_corners(detections), 'red', 'picture')
         #show_images('resize', ('Apriltag Corners', apriltagCorners))
         #cv2.waitKey(0)
                 
@@ -1257,6 +1284,11 @@ def main():
         #Don't wait for a keypress
         cv2.waitKey(1)
 
+    if not valid_frame:
+        print("Couldn't validate first frame")
+        end_program()
+        quit()
+
     #-----------------------------------------LOOP
     run = True
     counter = 2
@@ -1350,7 +1382,7 @@ def main():
         if not pi:
             max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
         else:
-            max_file_count == 0
+            max_file_count = 0
         
         #If it's running from images and finishes the last image
         if (counter == max_file_count) and not pi:
