@@ -769,7 +769,7 @@ def edge_clear(image, detections):
     #print(np.count_nonzero(where_gold))
     #Got 324054 on a trial
     
-    linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 1000, None, 50, 10)
+    linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 100, None, 50, 10)
     
     continuous_gold_border = [0] * 4
         
@@ -803,8 +803,7 @@ def edge_clear(image, detections):
                     continuous_gold_border[3] = distance
                 cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
 
-    print(where_gold.shape[0] * (division - 3)/division, continuous_gold_border)
-    print(all(ele > where_gold.shape[0] * (division - 3)/division for ele in continuous_gold_border))
+    #print(where_gold.shape[0] * (division - 3)/division, continuous_gold_border)
     
     if display:
         #Set the window to be able to be resized
@@ -817,14 +816,12 @@ def edge_clear(image, detections):
         #Show the image
         cv2.imshow("Edge pattern", image)
         #Wait for keypress
-        cv2.waitKey(0)
+        cv2.waitKey(1)
     
-    if np.count_nonzero(where_gold) < 70000:
-        output = False
-    else:
+    if all(ele > where_gold.shape[0] * (division - 3)/division for ele in continuous_gold_border):
         output = True
-
-    output = True
+    else:
+        output = False
 
     return output
 
@@ -855,6 +852,7 @@ def process_frame(frame, turn_background, first_frame, previous_detections=False
         #cv2.waitKey(0)
                 
         if not edge_clear(frame, detections):
+            print("Gold border not clear")
             valid_frame = False
             color_array = np.zeros((8, 8), dtype=int)
         else:            

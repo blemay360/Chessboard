@@ -1884,3 +1884,61 @@ Thu Mar 25 15:42:38 2021 IN: uci
 Thu Mar 25 15:42:38 2021 OUT: id name Feeks
 Thu Mar 25 15:42:38 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
 Thu Mar 25 15:42:38 2021 OUT: uciok
+Thu Mar 25 15:46:36 2021 Set TT size to 8192 entries 
+Thu Mar 25 15:46:36 2021 stdin thread started
+Thu Mar 25 15:46:36 2021 IN: uci
+Thu Mar 25 15:46:36 2021 OUT: id name Feeks
+Thu Mar 25 15:46:36 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Thu Mar 25 15:46:36 2021 OUT: uciok
+Thu Mar 25 15:47:58 2021 Set TT size to 8192 entries 
+Thu Mar 25 15:47:58 2021 stdin thread started
+Thu Mar 25 15:47:59 2021 IN: uci
+Thu Mar 25 15:47:59 2021 OUT: id name Feeks
+Thu Mar 25 15:47:59 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Thu Mar 25 15:47:59 2021 OUT: uciok
+Thu Mar 25 15:51:28 2021 Set TT size to 8192 entries 
+Thu Mar 25 15:51:28 2021 stdin thread started
+Thu Mar 25 15:51:28 2021 IN: uci
+Thu Mar 25 15:51:28 2021 OUT: id name Feeks
+Thu Mar 25 15:51:28 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Thu Mar 25 15:51:28 2021 OUT: uciok
+Thu Mar 25 15:52:06 2021 IN: ucinewgame
+Thu Mar 25 15:52:06 2021 IN: isready
+Thu Mar 25 15:52:06 2021 OUT: readyok
+Thu Mar 25 15:52:06 2021 IN: position startpos moves e2e4
+Thu Mar 25 15:52:06 2021 IN: go movetime 500
+Thu Mar 25 15:52:06 2021 OUT: info string waiting for init thread
+Thu Mar 25 15:52:06 2021 OUT: info string initialized
+Thu Mar 25 15:52:06 2021 search for 0.500000 seconds
+Thu Mar 25 15:52:06 2021 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+Thu Mar 25 15:52:06 2021 depth 1 score cp 42 time 221 nodes 21 pv f7f6
+Thu Mar 25 15:52:07 2021 time is up
+Thu Mar 25 15:52:07 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Thu Mar 25 15:52:07 2021 selected move: [42.5, Move.from_uci('f7f6'), 1, 0.5488624572753906]
+Thu Mar 25 15:52:07 2021 nps: 61.234456, nodes: 38, tt_hits: 33.333333%, avg bco index: 5.00
+Thu Mar 25 15:52:07 2021 time is up
+Thu Mar 25 15:52:07 2021 OUT: bestmove f7f6
+Thu Mar 25 15:52:49 2021 time is up
+Thu Mar 25 15:53:32 2021 Set TT size to 8192 entries 
+Thu Mar 25 15:53:33 2021 stdin thread started
+Thu Mar 25 15:53:33 2021 IN: uci
+Thu Mar 25 15:53:33 2021 OUT: id name Feeks
+Thu Mar 25 15:53:33 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Thu Mar 25 15:53:33 2021 OUT: uciok
+Thu Mar 25 15:54:11 2021 IN: ucinewgame
+Thu Mar 25 15:54:11 2021 IN: isready
+Thu Mar 25 15:54:11 2021 OUT: readyok
+Thu Mar 25 15:54:11 2021 IN: position startpos moves e2e4
+Thu Mar 25 15:54:11 2021 IN: go movetime 500
+Thu Mar 25 15:54:11 2021 OUT: info string waiting for init thread
+Thu Mar 25 15:54:11 2021 OUT: info string initialized
+Thu Mar 25 15:54:11 2021 search for 0.500000 seconds
+Thu Mar 25 15:54:11 2021 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+Thu Mar 25 15:54:12 2021 depth 1 score cp 42 time 237 nodes 21 pv f7f6
+Thu Mar 25 15:54:12 2021 time is up
+Thu Mar 25 15:54:12 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Thu Mar 25 15:54:12 2021 selected move: [42.5, Move.from_uci('f7f6'), 1, 0.5218281745910645]
+Thu Mar 25 15:54:12 2021 nps: 68.114353, nodes: 36, tt_hits: 33.333333%, avg bco index: 4.33
+Thu Mar 25 15:54:12 2021 time is up
+Thu Mar 25 15:54:12 2021 OUT: bestmove f7f6
+Thu Mar 25 15:54:16 2021 time is up
