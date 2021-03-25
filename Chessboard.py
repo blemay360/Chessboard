@@ -1,6 +1,6 @@
 #Variables to change stuff on a high level
 #Whether to display the input image
-display_input = True
+display_input = False
 #Whether to wait for a keypress on each image or not
 wait = False
 #Whether to play against a computer
@@ -17,7 +17,7 @@ image_directory = 'TestingImages/PiImages/'
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
-import chess, time, pygame, chess.engine, cv2, copy, math, os, sys
+import chess, time, pygame, chess.engine, cv2, copy, math, os, sys, imutils
 import numpy as np
 from apriltag import apriltag
 
@@ -35,13 +35,11 @@ if pi:
 
 '''
 -----------------------------------------TO DO--------------------------------------------------
-Adapt color detection function to work with large board
-Test large board with pi
+Look into discarding frames on consececutive frames being similar
 Test error detection for get_detection_array 
     Take off two pieces at once
     Add an extra piece
 Add adaptive thresholding to get_detection_array
-?Make new function for processing first image
 '''
 
 def end_program():
@@ -49,23 +47,114 @@ def end_program():
     engine.quit()
 
 #-----------------------------------------APRILTAG FUNCTIONS
-def detect_apriltags(family, image):
+def detect_apriltags(family, image, previous_detections=False):
     '''
     Takes a family of apriltags to look for, as well as an image to look at, and returns an array with a dictionary of detection info for each apriltag detected in the image
     '''
     #Only needs to be done once, but for ease of coding we'll do it every function call
     detector = apriltag(family)
-    
+        
     #Convert input image to grayscale
     gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
 
-    #Look for apriltags
-    detections = detector.detect(gray_img)
+    #If we have the previous location for each tag and already know where to look
+    if previous_detections:
+        #For reference, on a sample image, measuring the entire image of 4 apriltags took 0.7629 seconds, one cropped apriltag took 0.0028 seconds
+        #Empty list to add dictionaries for each tag to
+        detection_list = []
+        #Percent to increase the corner location of the window
+        percent_increase = 1.3
+        #Dictionary to help cycle through each corner
+        corners_dict = {0:'lb', 1:'rb', 2:'rt', 3:'lt'}
+        #Go through each tag
+        for tag_id in range(4):
+            #Find the lowest y value of the top two tag corners
+            top = min(return_tag_info(previous_detections, tag_id, 'lt')[1], return_tag_info(previous_detections, tag_id, 'rt')[1])
+            #Find the highest y value of the lower two tag corners
+            bottom = max(return_tag_info(previous_detections, tag_id, 'lb')[1], return_tag_info(previous_detections, tag_id, 'rb')[1])
+            #Find the lowest x value of the left two tag corners
+            left = min(return_tag_info(previous_detections, tag_id, 'lt')[0], return_tag_info(previous_detections, tag_id, 'lb')[0])
+            #Find the highest x value of the right two tag corners
+            right = max(return_tag_info(previous_detections, tag_id, 'rt')[0], return_tag_info(previous_detections, tag_id, 'rb')[0])
+            
+            #Slightly increase the window to look for the apriltag in
+            top = bottom - int(percent_increase * abs(bottom - top))
+            bottom = top + int(percent_increase * abs(bottom - top))
+            left = right - int(percent_increase * abs(right - left))
+            right = left + int(percent_increase * abs(right - left))
+            
+            #Search for an apriltag in the area arounnd the last seen tag
+            detections = detector.detect(gray_img[top:bottom, left:right])
+            
+            #Offset the coordinates from the detections to apply to the whole image, not the closely cropped one
+            offset_center = (return_tag_info(detections, tag_id, 'center')[0] + left, return_tag_info(detections, tag_id, 'center')[1] + top)
+            #Initialize list to store the coordinates of the offset coordinates
+            offset_corners = [0] * 4
+            #Go through each corner to offset the coordinates
+            for i in range(4):
+                #Offset coordinates for the cuurent corner and add to the offset_corners list
+                offset_corners[i] = [return_tag_info(detections, tag_id, corners_dict[i])[0] + left, return_tag_info(detections, tag_id, corners_dict[i])[1] + top]
+            #Reconstruct dictionary for the current tag and append to the list of tags
+            detection_list.append({'hamming':return_tag_info(detections, tag_id, 'hamming'), 'margin':return_tag_info(detections, tag_id, 'margin'), 'id':return_tag_info(detections, tag_id, 'id'), 'center':offset_center, 'lb-rb-rt-lt':offset_corners})
+            
+        #Convert list of detections to tuple to return to original variable type
+        detections = tuple(detection_list)
+    else:
+        detections = None
+
+    if not previous_detections or any(map(lambda ele: ele is None, detections)):
+        #Look for apriltags
+        detections = detector.detect(gray_img)
+        
+        #Make an empty list to add tags with the correct ids
+        pruned_detection_list = []
+        #For each detected tag
+        for tag in detections:
+            #If the tag id is 0, 1, 2, or 3 and the detection confidence is good
+            if (tag['id'] < 4) and (tag['margin'] > 5):
+                #Add the tag info to the detection list
+                pruned_detection_list.append(tag)
+        #Replace the old detection tuple with the new modified detection list
+        detections = tuple(pruned_detection_list)
+        
+        #If the detections are under 4
+        if (len(detections) < 4):
+                print("Missing an apriltag")
+                print("Apriltags found: " + str(len(detections)))
+                print(detections)
+                #Set the window to be able to be resized
+                cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+                #Resize the window
+                if pi:
+                    cv2.resizeWindow("Input Image", 200, 200)
+                else:
+                    cv2.resizeWindow("Input Image", 700, 700)
+                #Show the image
+                cv2.imshow("Input Image", image)
+                #Wait for a keypress
+                cv2.waitKey(10000)
+                #Return empty list
+                return []
+        #If there are extra apriltags detected with duplicate ids
+        elif (len(detections) > 4):
+            #print("Detected Extra Apriltag")
+            #Sort the detection list by descending confidence in tag detection
+            pruned_detection_list.sort(reverse=True, key=return_tag_margin)
+            #Remove the lowest confidence tags until only 4 are left
+            for i in range(len(detections) - 4):
+                #Remove the last value in the sorted list
+                pruned_detection_list.pop()
+            #Sort the list by tag id to return it to the original order
+            pruned_detection_list.sort(key=return_tag_id)
+            #Replace the previous detection tuple by the modified one
+            detections = tuple(pruned_detection_list)
+    elif (any(map(lambda ele: ele is None, detections))):
+        print("Lost some stuff")
     
     #Return variable with detected apriltag info
     return detections
 
-def parse_april_tag_coordinate(detections, tag_id, corner ='center'):
+def return_tag_info(detections, tag_id, info='center'):
     '''
     Function to easily parse the apriltag detection array
     Takes in the detection array, the desired tag to get info for, as well as the desired vertex to get the coordinates for
@@ -80,53 +169,59 @@ def parse_april_tag_coordinate(detections, tag_id, corner ='center'):
         print("Error finding apriltag " + str(tag_id))
         return None
     
-    #If the corner variable isn't there or is 'center'
-    if (corner == 'center'):
+    #If the info variable isn't there or is 'center'
+    if (info == 'center'):
         #Set x value of the center coordinate
-        x = detections[tag_id]['center'][0]
+        x = detections[index]['center'][0]
         #Set y value of the center coordinate
-        y = detections[tag_id]['center'][1]
+        y = detections[index]['center'][1]
+        #Output is the x and y coordinates in a tuple, rounded and cast to ints to the nearest pixel
+        output = (int(round(x)), int(round(y)))
+    #If the info variable is asking for hamming
+    elif (info == 'hamming'):
+        output = detections[index]['hamming']
+    #If the info variable is asking for hamming
+    elif (info == 'margin'):
+        output = detections[index]['margin']
+        #If the info variable is asking for hamming
+    elif (info == 'id'):
+        output = detections[index]['id']
     #Otherwise if the desired coordinate is not the center
     else:
-        #Dictionary for converting from text descriptions of the corners to the index of the corner coordinate in the apriltag array
+        #Dictionary for converting from text descriptions of the corners to the index of the info coordinate in the apriltag array
         corner_dict = { 'lb':0, 'rb':1, 'rt':2, 'lt':3 }
-        #Set x value of the corner coordinate
-        x = detections[tag_id]['lb-rb-rt-lt'][corner_dict[corner]][0]
-        #Set y value of the corner coordinate
-        y = detections[tag_id]['lb-rb-rt-lt'][corner_dict[corner]][1]
-    #Output is the x and y coordinates in a tuple, rounded and cast to ints to the nearest pixel
-    output = (int(round(x)), int(round(y)))
+        #Set x value of the info coordinate
+        x = detections[index]['lb-rb-rt-lt'][corner_dict[info]][0]
+        #Set y value of the info coordinate
+        y = detections[index]['lb-rb-rt-lt'][corner_dict[info]][1]
+        #Output is the x and y coordinates in a tuple, rounded and cast to ints to the nearest pixel
+        output = (int(round(x)), int(round(y)))
     return output
 
 def grab_inside_corners(detections):
     global run
     '''
     Function for returning the inner coordinates of the apriltags on the chessboard
-    Takes the detection array in as an input, and uses the parse_april_tag_coordinate function to get the corner coordinates of each tag
+    Takes the detection array in as an input, and uses the return_tag_info function to get the corner coordinates of each tag
     Returns each corner in a 4 element list
     '''
-    lt = parse_april_tag_coordinate(detections, 0, 'rb')
-    rt = parse_april_tag_coordinate(detections, 1, 'lb')
-    rb = parse_april_tag_coordinate(detections, 3, 'lt')
-    lb = parse_april_tag_coordinate(detections, 2, 'rt')
-    output = (lb, rb, rt, lt)
-    if (any(map(lambda elem: elem is None, output))):
-        end_program()
-        raise Exception("Error finding all four apriltags") 
-        sys.exit()
-    return output
+    lt = return_tag_info(detections, 0, 'rb')
+    rt = return_tag_info(detections, 1, 'lb')
+    rb = return_tag_info(detections, 3, 'lt')
+    lb = return_tag_info(detections, 2, 'rt')
+    return lt, rt, lb, rb
 
 def grab_outside_corners(detections):
     '''
     Function for returning the inner coordinates of the apriltags on the chessboard
-    Takes the detection array in as an input, and uses the parse_april_tag_coordinate function to get the corner coordinates of each tag
+    Takes the detection array in as an input, and uses the return_tag_info function to get the corner coordinates of each tag
     Returns each corner in a 4 element list
     '''
-    lt = parse_april_tag_coordinate(detections, 0, 'lt')
-    rt = parse_april_tag_coordinate(detections, 1, 'rt')
-    rb = parse_april_tag_coordinate(detections, 3, 'rb')
-    lb = parse_april_tag_coordinate(detections, 2, 'lb')
-    return lb, rb, rt, lt
+    lt = return_tag_info(detections, 0, 'lt')
+    rt = return_tag_info(detections, 1, 'rt')
+    rb = return_tag_info(detections, 3, 'rb')
+    lb = return_tag_info(detections, 2, 'lb')
+    return lt, rt, lb, rb
 
 def return_tag_margin(input_list):
     return input_list['margin']
@@ -227,8 +322,28 @@ def show_images(*arg):
             #Diplay the image
             cv2.imshow(arg[i][0], arg[i][1])
 
+def get_hist(image):
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    
+    h_bins = 50
+    s_bins = 60
+    histSize = [h_bins, s_bins]
+    
+    # hue varies from 0 to 179, saturation from 0 to 255
+    h_ranges = [0, 180]
+    s_ranges = [0, 256]
+    ranges = h_ranges + s_ranges # concat lists
+
+    # Use the 0-th and 1-st channels
+    channels = [0, 1]
+    
+    hist = cv2.calcHist([hsv_image], channels, None, histSize, ranges, accumulate=False)
+    cv2.normalize(hist, hist, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+    
+    return hist
+
 #-----------------------------------------IMAGE DETECTION FUNCTIONS
-def perspective_shift(image, corners, square=True):
+def perspective_shift(image, corners):
     '''
     Function to perform a perspectivve shift on an image
     Used to cut out unnecessary parts of the image and just focus on the chessboard, as well as make sectioning the chessboard easier
@@ -237,23 +352,16 @@ def perspective_shift(image, corners, square=True):
     '''
     #Measure the distance of each size of the chessboard and keep the maximum length
     distance = max(measure_distance(corners[0], corners[1]), measure_distance(corners[1], corners[2]), measure_distance(corners[2], corners[3]), measure_distance(corners[3], corners[0]))
-    if not square:
-        width_distance = max(measure_distance(corners[0], corners[1]), measure_distance(corners[2], corners[3]))
-        height_distance = max(measure_distance(corners[0], corners[2]), measure_distance(corners[1], corners[3]))
     
     #Convert the input corner coordinates to float
     pts1 = np.float32(corners)
     #Set the size of the output image to be the maximum chess side length of pixels from the input image and convert to float
     pts2 = np.float32([[0,0],[distance,0],[0,distance],[distance,distance]])
-    if not square:
-        pts2 = np.float32([[0,0],[width_distance,0],[0,height_distance],[width_distance,height_distance]])
     
     #Get matrix with which to shift the image using the coordinates of corners from the input image and the coordinates of where those points should be in the output image
     M = cv2.getPerspectiveTransform(pts1,pts2)
     #Perform perspective shift
     shifted_image = cv2.warpPerspective(image, M, (distance,distance))
-    if not square:
-        shifted_image = cv2.warpPerspective(image, M, (width_distance,height_distance))
     
     return shifted_image
 
@@ -628,119 +736,82 @@ def average_color(image, x, y, radius):
 def edge_clear(image, detections):
     display = False
     #(190, 170, 133)
-    lt = parse_april_tag_coordinate(detections, 3, 'lb')
-    rt = parse_april_tag_coordinate(detections, 2, 'rb')
-    rb = parse_april_tag_coordinate(detections, 2, 'rt')
-    lb = parse_april_tag_coordinate(detections, 3, 'lt')
    
-    image = perspective_shift(image, (lt, rt, lb, rb), False)
+    #Crop and perspective shift image using the outside corners of the apriltags
+    image = perspective_shift(image, grab_outside_corners(detections))
+    
+    #Factor to divide the image by, only the outside squares of width frame/division are used
+    division = 15
+    
+    #circle_image(image, (lt_inner, rt_inner, lb_inner, rb_inner), 'blue', 'picture')
     
     where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)[:,:,0]
+    
+    where_gold[(image.shape[0] // division):(image.shape[0] - image.shape[0] // division), (image.shape[1] // division):(image.shape[1] - image.shape[1] // division)] = 0
     
     where_gold = cv2.inRange(where_gold, 10, 40)
         
     if display:
         #Set the window to be able to be resized
-        cv2.namedWindow("Lines", cv2.WINDOW_NORMAL)
+        cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
         #Resize the window to 200 by 200 pixels
-        cv2.resizeWindow("Lines", 700,700)
+        cv2.resizeWindow("Edge pattern", 700,700)
         #Show the image
-        cv2.imshow("Lines", where_gold)
+        cv2.imshow("Edge pattern", where_gold)
         #Wait for keypress
-        cv2.waitKey(1)
+        cv2.waitKey(0)
         
     #print(np.count_nonzero(where_gold))
+    #Got 324054 on a trial
     
-    if np.count_nonzero(where_gold) < 50000:
+    if np.count_nonzero(where_gold) < 610000:
         output = False
     else:
         output = True
 
     return output
-    
 
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTION
-def process_frame(frame, turn_background, first_frame=False):
-    #Whether to automaticallly focus on the middle of the image or not
-    auto_crop = False
+def process_frame(frame, turn_background, first_frame, previous_detections=False, prev_hist=None):
+    valid_frame = True
     
-    if auto_crop:
-        #If frame is taller than it is wide
-        if (frame.shape[0] > frame.shape[1]):
-            #Make a copy of frame in case cropping it doesn't work
-            input_frame = frame
-            #Create a square that is as wide as the photo and in the middle of the frame
-            start_point = (0, (frame.shape[0] - frame.shape[1])//2)
-            end_point = (frame.shape[1], (frame.shape[0] - frame.shape[1])//2 + frame.shape[1])
-            #Crop the frame to just the middle square
-            frame = frame[start_point[1]:end_point[1], start_point[0]:end_point[0]]
-    
-    #Run apriltag detection on image
-    detections = detect_apriltags(tag_family, frame)
-    
-    if auto_crop:
-        #If not all 4 apriltags are detected
-        if (len(detections) != 4) and (input_frame.shape[0] > input_frame.shape[1]):
-            print("Rerunning detection on entire image")
-            #Revert back to the original frame
-            frame = input_frame
-            #Run apriltag detection again
-            detections = detect_apriltags(tag_family, frame)
+    hist = get_hist(frame)
+    if (type(prev_hist) == np.ndarray):
+        comparison = cv2.compareHist(hist, prev_hist, 0)
+        #print(comparison)
+        
+    if first_frame:
+        #Run apriltag detection on whole image
+        detections = detect_apriltags(tag_family, frame)
+    else:
+        #Run apriltag detection, focusing on the area where the tags were last seen
+        detections = detect_apriltags(tag_family, frame, previous_detections)
     
     #Make copies of original image to keep the same for display 
     apriltagCorners, shifted, color_detection, piece_detection = copy_image(frame, 4)            
-    
-    #If the detections are still under 4
-    if (len(detections) < 4):
-            print("Missing an apriltag")
-            print("Apriltags found: " + str(len(detections)))
-            print(detections)
-            #Set the window to be able to be resized
-            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-            #Resize the window
-            if pi:
-                cv2.resizeWindow("Input Image", 200, 200)
-            else:
-                cv2.resizeWindow("Input Image", 700, 700)
-            #Show the image
-            cv2.imshow("Input Image", frame)
-            #Wait for a keypress
-            cv2.waitKey(0)
-    #If there are extra apriltags detected
-    elif (len(detections) > 4):
-        #print("Detected Extra Apriltag")
-        #Make a copy of the detection tuple as a list for easier sorting and deleting
-        detection_list = list(detections)
-        #Sort the detection list by ascending tag id
-        detection_list.sort(reverse=True, key=return_tag_margin)
-        #For all the detected tags over 4
-        for i in range(len(detections) - 4):
-            #Remove the last value
-            detection_list.pop()
-        #Sort the list by tag id to return it to the original order
-        detection_list.sort(key=return_tag_id)
-        #Replace the previous detection tuple by the modified one
-        detections = tuple(detection_list)
 
     #If 4 apriltags are seen (one in each 4 corners of chessboard), crop image and run detection functions
-    if(len(detections) == 4):
-        #Get values for the inside corners of each 4 apriltags
-        lb, rb, rt, lt = grab_inside_corners(detections)
-        
+    if detections and valid_frame:        
         #Place circles on inside corners of each apriltag
         #circle_image(apriltagCorners, (lt, rt, rb, lb), 'red', 'picture')
         #show_images('resize', ('Apriltag Corners', apriltagCorners))
         #cv2.waitKey(0)
                 
-        print(edge_clear(frame, detections))
-        
-        #Shift perspective to make to make the inside corners of the apriltags the corners of the image
-        shifted = perspective_shift(shifted, (lt, rt, lb, rb))
-        
-        #Go through each square of the chessboard to tell if square is populated with piece and measure piece color
-        piece_detection, detection_array, color_detection, color_array = get_detection_color_array(shifted, turn_background, first_frame)
+        if not edge_clear(frame, detections):
+            valid_frame = False
+            color_array = np.zeros((8, 8), dtype=int)
+        else:            
+            #Shift perspective to make to make the inside corners of the apriltags the corners of the image
+            shifted = perspective_shift(shifted, grab_inside_corners(detections))
+            
+            #Go through each square of the chessboard to tell if square is populated with piece and measure piece color
+            piece_detection, detection_array, color_detection, color_array = get_detection_color_array(shifted, turn_background, first_frame)
+    #If not all four apriltags are visisble
+    else:
+        valid_frame = False
+        color_array = np.zeros((8, 8), dtype=int)
     
-    return color_array, piece_detection, color_detection
+    return valid_frame, detections, hist, color_array, piece_detection, color_detection
 
 #-----------------------------------------CHESS MOVE FUNCTIONS
 def create_board_array():
@@ -1160,6 +1231,8 @@ def main():
         camera = setup_camera()
         #Take an image from the camera
         input_image = pi_take_image(camera)
+        #Rotate image 180 degrees to correct for camera flip
+        input_image = imutils.rotate(input_image, 180)
     else:
         #Read the first frame in
         input_image = cv2.imread(image_directory + '1.jpg')
@@ -1171,10 +1244,10 @@ def main():
             cv2.waitKey(10)
         
     #Save the color array as old to compare with the second frame later
-    old_color_array, piece_detection, gray = process_frame(input_image, turn_background, True)
+    valid_frame, previous_detections, prev_hist, old_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, True)
     
     #Show the grayscale color detection image and piece detection image
-    show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
+    show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
         
     if wait:
         #Wait for a keypress while updating the chessboard gui
@@ -1201,18 +1274,23 @@ def main():
         #Read the current frame
         if pi:
             input_image = pi_take_image(camera)
+            input_image = imutils.rotate(input_image, 180)
         else:
             input_image = cv2.imread(image_directory + str(counter) + '.jpg')
         
         #Process the current frame
-        new_color_array, piece_detection, gray = process_frame(input_image, turn_background)
+        valid_frame, previous_detections, prev_hist, new_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, False, previous_detections, prev_hist)
         
+        #If the frame isn't valid, restart from the beginning of the loop
+        if not valid_frame:
+            continue
+        
+        #Show the input image
         if display_input:
-            #Show the input image
             show_images('resize', ("Input Image", input_image))
         
         #Show the grayscale color detection image and piece detection image for the current image
-        show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
+        show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
         
         #Compare the color detection array of the current image with the last image to deterime the move that was made
         if not np.array_equal(old_color_array, new_color_array):
@@ -1223,10 +1301,13 @@ def main():
             move = None
             print("none")
         
+        #If it's time to check the computer's move was properly carried out
         if vs_comp and (turn_background[2] == 0):
+            #If the move just made was the same one as the engine calculated
             if (move == result.move):
                 print("Good job")
                 right_move = 1
+            #If the move wasn't the same as the engine's move
             else:
                 print("Wrong move")
                 right_move = 0
@@ -1277,6 +1358,7 @@ def main():
             print("Reached end of files")
             run = False
     
+    #Close engine
     engine.quit()
     #When all images have been processed, wait 1 second to allow the user to decompress before ending
     time.sleep(1)

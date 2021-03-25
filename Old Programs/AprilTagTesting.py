@@ -1,10 +1,10 @@
-import cv2, imutils
+import cv2, imutils, time
 import numpy as np
 from apriltag import apriltag
 
 #------------------------------------------------SETUP-------------------------------------------------
   
-detector = apriltag("tag36h11")  
+detector = apriltag("tag25h9")  
 
 # Red color in BGR
 color = (0, 0, 255)
@@ -31,7 +31,9 @@ while False:
     output = frame
     
     for i in range(len(detections)):
-        center_coordinates = (int(round(detections[i]["center"][0])), int(round(detections[i]["center"][1])))
+        center_coordinates = (int(round(detections[i]["lb-rb-rt-lt"][0][0])), int(round(detections[i]["lb-rb-rt-lt"][0][1])))
+        
+        print(detections[i]['id'])
 
         # Using cv2.circle() method
         # Draw a circle with blue line borders of thickness of 2 px
@@ -55,7 +57,9 @@ radius = 10
 #imagepath = '/home/pi/Pictures/18in.jpg'
 #imagepath = 'aprilTagImageBorders.jpg'
 #imagepath = '/home/blemay360/1EB8-1359/on_four_wot.jpg'
-imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/16bitApriltags_onBoard.jpg'
+
+start_time = time.time()
+imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/PiImages/1.jpg'
 image = cv2.imread(imagepath)
 
 #image = imutils.rotate(image, 180)
@@ -65,6 +69,25 @@ gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 detector = apriltag("tag16h5")
 
 detections = detector.detect(gray_img)
+
+print(time.time() - start_time)
+
+#----------------------------------------
+start_time = time.time()
+imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/PiImages/1_cropped.jpg'
+image = cv2.imread(imagepath)
+
+#image = imutils.rotate(image, 180)
+
+gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+
+detector = apriltag("tag16h5")
+
+detections = detector.detect(gray_img)
+
+print(time.time() - start_time)
+#----------------------------------------
+
 
 #print(detections[0]['lb-rb-rt-lt'][1])
 print(detections)
@@ -85,6 +108,7 @@ cv2.resizeWindow('image', 800,1200)
 
 cv2.imshow("image", image)
 
-if cv2.waitKey(0) & 0xff == 27:  
-    cv2.destroyAllWindows() 
+#if cv2.waitKey(0) & 0xff == 27:  
+    #cv2.destroyAllWindows() 
+cv2.waitKey(1)
 
