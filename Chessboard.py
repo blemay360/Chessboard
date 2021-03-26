@@ -2,7 +2,7 @@
 #Whether to display the input image
 display_input = False
 #Whether to wait for a keypress on each image or not
-wait = True
+wait = False
 #Whether to play against a computer
 vs_comp = True
 #Which apriltags should be looked for
@@ -88,17 +88,21 @@ def detect_apriltags(family, image, previous_detections=False):
             #Search for an apriltag in the area arounnd the last seen tag
             detections = detector.detect(gray_img[top:bottom, left:right])
             
-            #Offset the coordinates from the detections to apply to the whole image, not the closely cropped one
-            offset_center = (return_tag_info(detections, tag_id, 'center')[0] + left, return_tag_info(detections, tag_id, 'center')[1] + top)
-            #Initialize list to store the coordinates of the offset coordinates
-            offset_corners = [0] * 4
-            #Go through each corner to offset the coordinates
-            for i in range(4):
-                #Offset coordinates for the cuurent corner and add to the offset_corners list
-                offset_corners[i] = [return_tag_info(detections, tag_id, corners_dict[i])[0] + left, return_tag_info(detections, tag_id, corners_dict[i])[1] + top]
-            #Reconstruct dictionary for the current tag and append to the list of tags
-            detection_list.append({'hamming':return_tag_info(detections, tag_id, 'hamming'), 'margin':return_tag_info(detections, tag_id, 'margin'), 'id':return_tag_info(detections, tag_id, 'id'), 'center':offset_center, 'lb-rb-rt-lt':offset_corners})
-            
+            #If there was an apriltag detected
+            if (detections != ()):
+                #Offset the coordinates from the detections to apply to the whole image, not the closely cropped one
+                offset_center = (return_tag_info(detections, tag_id, 'center')[0] + left, return_tag_info(detections, tag_id, 'center')[1] + top)
+                #Initialize list to store the coordinates of the offset coordinates
+                offset_corners = [0] * 4
+                #Go through each corner to offset the coordinates
+                for i in range(4):
+                    #Offset coordinates for the cuurent corner and add to the offset_corners list
+                    offset_corners[i] = [return_tag_info(detections, tag_id, corners_dict[i])[0] + left, return_tag_info(detections, tag_id, corners_dict[i])[1] + top]
+                #Reconstruct dictionary for the current tag and append to the list of tags
+                detection_list.append({'hamming':return_tag_info(detections, tag_id, 'hamming'), 'margin':return_tag_info(detections, tag_id, 'margin'), 'id':return_tag_info(detections, tag_id, 'id'), 'center':offset_center, 'lb-rb-rt-lt':offset_corners})
+            else:
+                detection_list.append(None)
+                
         #Convert list of detections to tuple to return to original variable type
         detections = tuple(detection_list)
     else:
@@ -121,20 +125,20 @@ def detect_apriltags(family, image, previous_detections=False):
         
         #If the detections are under 4
         if (len(detections) < 4):
-                print("Missing an apriltag")
-                print("Apriltags found: " + str(len(detections)))
-                print(detections)
-                #Set the window to be able to be resized
-                cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-                #Resize the window
-                if pi:
-                    cv2.resizeWindow("Input Image", 200, 200)
-                else:
-                    cv2.resizeWindow("Input Image", 700, 700)
-                #Show the image
-                cv2.imshow("Input Image", image)
-                #Wait for a keypress
-                cv2.waitKey(10000)
+                #print("Missing an apriltag")
+                #print("Apriltags found: " + str(len(detections)))
+                #print(detections)
+                ##Set the window to be able to be resized
+                #cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+                ##Resize the window
+                #if pi:
+                    #cv2.resizeWindow("Input Image", 200, 200)
+                #else:
+                    #cv2.resizeWindow("Input Image", 700, 700)
+                ##Show the image
+                #cv2.imshow("Input Image", image)
+                ##Wait for a keypress
+                #cv2.waitKey(1)
                 #Return empty list
                 return []
         #If there are extra apriltags detected with duplicate ids
@@ -201,7 +205,6 @@ def return_tag_info(detections, tag_id, info='center'):
     return output
 
 def grab_inside_corners(detections):
-    global run
     '''
     Function for returning the inner coordinates of the apriltags on the chessboard
     Takes the detection array in as an input, and uses the return_tag_info function to get the corner coordinates of each tag
@@ -465,7 +468,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
 
     if first_frame:
         #Set new edge_count_threshold to be slightly smaller than the lowest edge count of an occupied square
-        edge_count_threshold = int(min(occupied_edge_count) * 0.7)
+        edge_count_threshold = int(min(occupied_edge_count) * 0.65)
     
     if (np.count_nonzero(detection_array) > (turn_background[0] + turn_background[1]) or np.count_nonzero(detection_array) < (turn_background[0] + turn_background[1] - 1)):
         print("Error detecting number of pieces on board")
@@ -753,7 +756,7 @@ def edge_clear(image, detections):
     
     where_gold = cv2.inRange(where_gold, 10, 40)
         
-    if display:
+    if display and False:
         #Set the window to be able to be resized
         cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
         #Resize the window
@@ -826,13 +829,8 @@ def edge_clear(image, detections):
     return output
 
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTION
-def process_frame(frame, turn_background, first_frame, previous_detections=False, prev_hist=None):
+def process_frame(frame, turn_background, first_frame, previous_detections=False):
     valid_frame = True
-    
-    hist = get_hist(frame)
-    if (type(prev_hist) == np.ndarray):
-        comparison = cv2.compareHist(hist, prev_hist, 0)
-        #print(comparison)
         
     if first_frame:
         #Run apriltag detection on whole image
@@ -852,7 +850,7 @@ def process_frame(frame, turn_background, first_frame, previous_detections=False
         #cv2.waitKey(0)
                 
         if not edge_clear(frame, detections):
-            print("Gold border not clear")
+            #print("Gold border not clear")
             valid_frame = False
             color_array = np.zeros((8, 8), dtype=int)
         else:            
@@ -866,7 +864,7 @@ def process_frame(frame, turn_background, first_frame, previous_detections=False
         valid_frame = False
         color_array = np.zeros((8, 8), dtype=int)
     
-    return valid_frame, detections, hist, color_array, piece_detection, color_detection
+    return valid_frame, detections, color_array, piece_detection, color_detection
 
 #-----------------------------------------CHESS MOVE FUNCTIONS
 def create_board_array():
@@ -1299,7 +1297,7 @@ def main():
             cv2.waitKey(10)
         
     #Save the color array as old to compare with the second frame later
-    valid_frame, previous_detections, prev_hist, old_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, True)
+    valid_frame, previous_detections, old_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, True)
     
     #Show the grayscale color detection image and piece detection image
     show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
@@ -1314,6 +1312,8 @@ def main():
 
     if not valid_frame:
         print("Couldn't validate first frame")
+        show_images('resize', ("Input Image", input_image))
+        cv2.waitKey(0)
         end_program()
         quit()
 
@@ -1328,7 +1328,7 @@ def main():
         turn_background[2] = 1 - (counter % 2)
         
         #If the wrong move was made for a computer match, wait here for user to correct before reading in a frame
-        if vs_comp:
+        if vs_comp and wait:
             cv2.waitKey(right_move)
         
         #Read the current frame
@@ -1339,7 +1339,7 @@ def main():
             input_image = cv2.imread(image_directory + str(counter) + '.jpg')
         
         #Process the current frame
-        valid_frame, previous_detections, prev_hist, new_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, False, previous_detections, prev_hist)
+        valid_frame, previous_detections, new_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, False, previous_detections)
         
         #If the frame isn't valid, restart from the beginning of the loop
         if not valid_frame:
@@ -1358,8 +1358,7 @@ def main():
             #Compute the move variable using the chess library
             move = chess.Move.from_uci(move)
         else:
-            move = None
-            print("none")
+            continue
         
         #If it's time to check the computer's move was properly carried out
         if vs_comp and (turn_background[2] == 0):
@@ -1377,7 +1376,7 @@ def main():
         if not (move in board.legal_moves):
             #Print the move wasn't legal
             print("Not legal")
-            #continue
+            continue
         
         #Update the board array to reflect the move that was just made
         board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
@@ -1389,11 +1388,13 @@ def main():
         old_color_array = new_color_array
         
         #Print the move that was made and the time it took to process the frame
-        print(move, time.time() - start)
+        #print(move, time.time() - start)
+        if board.is_check():
+            print("Check")
         
         if vs_comp and (turn_background[2] == 1):
             result = engine.play(board, chess.engine.Limit(time=0.5))
-            print("Computer move: " + str(result.move))
+            print("Computer move: " + str(board.san(result.move)))
             #board_array = update_board_array_uci(board, board_array, chess.Move.uci(result.move))
             #board.push(result.move)
         
