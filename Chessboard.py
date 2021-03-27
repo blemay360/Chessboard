@@ -755,6 +755,7 @@ def edge_clear(image, detections):
     where_gold[(image.shape[0] // division):(image.shape[0] - image.shape[0] // division), (image.shape[1] // division):(image.shape[1] - image.shape[1] // division)] = 0
     
     where_gold = cv2.inRange(where_gold, 10, 40)
+    #where_gold = cv2.inRange(where_gold, 25, 85)
         
     if display and False:
         #Set the window to be able to be resized
@@ -767,7 +768,7 @@ def edge_clear(image, detections):
         #Show the image
         cv2.imshow("Edge pattern", where_gold)
         #Wait for keypress
-        cv2.waitKey(1)
+        cv2.waitKey(0)
         
     #print(np.count_nonzero(where_gold))
     #Got 324054 on a trial
@@ -1341,6 +1342,10 @@ def main():
         #Process the current frame
         valid_frame, previous_detections, new_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, False, previous_detections)
         
+         #Show the grayscale color detection image and piece detection image for the current image
+        show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
+        cv2.waitKey(1)
+        
         #If the frame isn't valid, restart from the beginning of the loop
         if not valid_frame:
             continue
@@ -1348,9 +1353,6 @@ def main():
         #Show the input image
         if display_input:
             show_images('resize', ("Input Image", input_image))
-        
-        #Show the grayscale color detection image and piece detection image for the current image
-        show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
         
         #Compare the color detection array of the current image with the last image to deterime the move that was made
         if not np.array_equal(old_color_array, new_color_array):

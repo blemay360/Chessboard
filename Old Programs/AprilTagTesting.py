@@ -54,27 +54,12 @@ cv2.destroyAllWindows()
 # Radius of circle
 radius = 10
 
-#imagepath = '/home/pi/Pictures/18in.jpg'
+imagepath = '/home/pi/Chessboard/TestingImages/WoodenBoard.jpg'
 #imagepath = 'aprilTagImageBorders.jpg'
 #imagepath = '/home/blemay360/1EB8-1359/on_four_wot.jpg'
 
 start_time = time.time()
-imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/PiImages/1.jpg'
-image = cv2.imread(imagepath)
-
-#image = imutils.rotate(image, 180)
-
-gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
-
-detector = apriltag("tag16h5")
-
-detections = detector.detect(gray_img)
-
-print(time.time() - start_time)
-
-#----------------------------------------
-start_time = time.time()
-imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/PiImages/1_cropped.jpg'
+#imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/WoodenBoard.jpg'
 image = cv2.imread(imagepath)
 
 #image = imutils.rotate(image, 180)
@@ -103,12 +88,12 @@ for i in range(len(detections)):
         image = cv2.circle(image, center_coordinates, radius, colors[i], thickness)
 
 cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-cv2.resizeWindow('image', 800,1200)
-#cv2.resizeWindow('image', 200, 200)
+#cv2.resizeWindow('image', 800,1200)
+cv2.resizeWindow('image', 200, 200)
 
 cv2.imshow("image", image)
 
 #if cv2.waitKey(0) & 0xff == 27:  
     #cv2.destroyAllWindows() 
-cv2.waitKey(1)
+cv2.waitKey(0)
 
