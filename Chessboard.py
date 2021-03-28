@@ -74,7 +74,7 @@ def detect_apriltags(family, image, previous_detections=False):
             top = min(return_tag_info(previous_detections, tag_id, 'lt')[1], return_tag_info(previous_detections, tag_id, 'rt')[1])
             #Find the highest y value of the lower two tag corners
             bottom = max(return_tag_info(previous_detections, tag_id, 'lb')[1], return_tag_info(previous_detections, tag_id, 'rb')[1])
-            #Find the lowest x value of the left two tag corners
+            #Find the lowest x value of the left 80two tag corners
             left = min(return_tag_info(previous_detections, tag_id, 'lt')[0], return_tag_info(previous_detections, tag_id, 'lb')[0])
             #Find the highest x value of the right two tag corners
             right = max(return_tag_info(previous_detections, tag_id, 'rt')[0], return_tag_info(previous_detections, tag_id, 'rb')[0])
@@ -114,12 +114,16 @@ def detect_apriltags(family, image, previous_detections=False):
         
         #Make an empty list to add tags with the correct ids
         pruned_detection_list = []
+        #Make an empty list to add margins to only keep best tags of each id
+        margin_list = [0]*4
         #For each detected tag
         for tag in detections:
             #If the tag id is 0, 1, 2, or 3 and the detection confidence is good
             if (tag['id'] < 4) and (tag['margin'] > 5):
-                #Add the tag info to the detection list
-                pruned_detection_list.append(tag)
+                if (tag['margin'] > margin_list[tag['id']]):
+                    #Add the tag info to the detection list
+                    pruned_detection_list.append(tag)
+                    margin_list[tag['id']] = tag['margin']
         #Replace the old detection tuple with the new modified detection list
         detections = tuple(pruned_detection_list)
         
@@ -399,7 +403,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
         #Thickness of text to add to image
         text_thickness = 1
         #Thickness of lines to draw on image
-        line_thickness = 1
+        line_thickness = 4
     else:
         #Size of text to add to image
         text_size = 1.5
@@ -468,7 +472,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
 
     if first_frame:
         #Set new edge_count_threshold to be slightly smaller than the lowest edge count of an occupied square
-        edge_count_threshold = int(min(occupied_edge_count) * 0.65)
+        edge_count_threshold = int(min(occupied_edge_count) * 0.5)
     
     if (np.count_nonzero(detection_array) > (turn_background[0] + turn_background[1]) or np.count_nonzero(detection_array) < (turn_background[0] + turn_background[1] - 1)):
         print("Error detecting number of pieces on board")
@@ -486,6 +490,8 @@ def get_detection_color_array(image, turn_background, first_frame=False):
     if (np.count_nonzero(detection_array) + 1 == turn_background[0] + turn_background[1]):
         #Subtract one piece from whichever side didn't just move
         turn_background[turn_background[2]] -= 1
+        show_images("resize", ("Subtracting a piece from" + str(turn_background[2]), image))
+        cv2.waitKey(0)
 
     #Flatten the color array to a 1D array to bbe able to sort it
     raveled_color_array = np.ravel(color_array)
@@ -741,91 +747,101 @@ def average_color(image, x, y, radius):
 def edge_clear(image, detections):
     display = True
     #(190, 170, 133)
-   
-    #Crop and perspective shift image using the outside corners of the apriltags
-    image = perspective_shift(image, grab_outside_corners(detections))
     
-    #Factor to divide the image by, only the outside squares of width frame/division are used
-    division = 15
+    output = False
     
-    #circle_image(image, (lt_inner, rt_inner, lb_inner, rb_inner), 'blue', 'picture')
+    outside_corners = grab_outside_corners(detections)
     
-    where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)[:,:,0]
-    
-    where_gold[(image.shape[0] // division):(image.shape[0] - image.shape[0] // division), (image.shape[1] // division):(image.shape[1] - image.shape[1] // division)] = 0
-    
-    where_gold = cv2.inRange(where_gold, 10, 40)
-    #where_gold = cv2.inRange(where_gold, 25, 85)
+    if not any(map(lambda ele: ele is None, outside_corners)):
+        #Crop and perspective shift image using the outside corners of the apriltags
+        image = perspective_shift(image, outside_corners)
         
-    if display and False:
-        #Set the window to be able to be resized
-        cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
-        #Resize the window
-        if pi:
-            cv2.resizeWindow("Edge pattern", 200, 200)
-        else:
-            cv2.resizeWindow("Edge pattern", 700,700)
-        #Show the image
-        cv2.imshow("Edge pattern", where_gold)
-        #Wait for keypress
-        cv2.waitKey(0)
+        #Factor to divide the image by, only the outside squares of width frame/division are used
+        division = 16
         
-    #print(np.count_nonzero(where_gold))
-    #Got 324054 on a trial
-    
-    linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 100, None, 50, 10)
-    
-    continuous_gold_border = [0] * 4
+        #circle_image(image, (lt_inner, rt_inner, lb_inner, rb_inner), 'blue', 'picture')
         
-    if linesP is not None:
-        for i in range(0, len(linesP)):
-            l = linesP[i][0]
-            start = (l[0], l[1])
-            end = (l[2], l[3])
-            #Left side
-            if (l[0] < where_gold.shape[0]/division):
-                distance = measure_distance(start, end)
-                if (distance > continuous_gold_border[0]):
-                    continuous_gold_border[0] = distance
-                cv2.line(image, (l[0], l[1]), (l[2], l[3]), (50,127,205), 3, cv2.LINE_AA)
-            #Right side
-            elif (l[0] > (division - 1) * where_gold.shape[0]/division):
-                distance = measure_distance(start, end)
-                if (distance > continuous_gold_border[1]):
-                    continuous_gold_border[1] = distance
-                cv2.line(image, (l[0], l[1]), (l[2], l[3]), (255,0,0), 3, cv2.LINE_AA)
-            #Top side
-            elif (l[1] < where_gold.shape[1]/division):
-                distance = measure_distance(start, end)
-                if (distance > continuous_gold_border[2]):
-                    continuous_gold_border[2] = distance
-                cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,255,0), 3, cv2.LINE_AA)
-            #Bottom side
-            elif (l[1] > (division - 1) * where_gold.shape[1]/division):
-                distance = measure_distance(start, end)
-                if (distance > continuous_gold_border[3]):
-                    continuous_gold_border[3] = distance
-                cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
+        where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)[:,:,0]
+        
+        where_gold[(image.shape[0] // division):(image.shape[0] - image.shape[0] // division), (image.shape[1] // division):(image.shape[1] - image.shape[1] // division)] = 0
+        
+        where_gold = cv2.medianBlur(where_gold, 3)
+        
+        #where_gold = cv2.inRange(where_gold, 10, 90)
+        #where_gold = cv2.inRange(where_gold, 10, 40)
+        #where_gold = cv2.inRange(where_gold, 25, 85)
+            
+        if display and True:
+            #Set the window to be able to be resized
+            cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
+            #Resize the window
+            if pi:
+                cv2.resizeWindow("Edge pattern", 200, 200)
+            else:
+                cv2.resizeWindow("Edge pattern", 700,700)
+            #Show the image
+            cv2.imshow("Edge pattern", where_gold)
+            #Wait for keypress
+            cv2.waitKey(0)
+            
+        #print(np.count_nonzero(where_gold))
+        #Got 324054 on a trial
+        
+        linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 100, None, 50, 10)
+        
+        continuous_gold_border = [0] * 4
+            
+        if linesP is not None:
+            for i in range(0, len(linesP)):
+                l = linesP[i][0]
+                start = (l[0], l[1])
+                end = (l[2], l[3])
+                #Left side
+                if (start[0] < where_gold.shape[0]/division) and (end[0] < where_gold.shape[0]/division):
+                    distance = measure_distance(start, end)
+                    if (distance > continuous_gold_border[0]):
+                        continuous_gold_border[0] = distance
+                    cv2.line(image, (l[0], l[1]), (l[2], l[3]), (50,127,205), 3, cv2.LINE_AA)
+                #Right side
+                elif (start[0] > (division - 1) * where_gold.shape[0]/division) and (end[0] > (division - 1) * where_gold.shape[0]/division):
+                    distance = measure_distance(start, end)
+                    if (distance > continuous_gold_border[1]):
+                        continuous_gold_border[1] = distance
+                    cv2.line(image, (l[0], l[1]), (l[2], l[3]), (255,0,0), 3, cv2.LINE_AA)
+                #Top side
+                elif (start[1] < where_gold.shape[1]/division) and (end[1] < where_gold.shape[1]/division):
+                    distance = measure_distance(start, end)
+                    if (distance > continuous_gold_border[2]):
+                        continuous_gold_border[2] = distance
+                    cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,255,0), 3, cv2.LINE_AA)
+                #Bottom side
+                elif (start[1] > (division - 1) * where_gold.shape[1]/division) and (start[1] > (division - 1) * where_gold.shape[1]/division):
+                    distance = measure_distance(start, end)
+                    if (distance > continuous_gold_border[3]):
+                        continuous_gold_border[3] = distance
+                    cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
 
-    #print(where_gold.shape[0] * (division - 3)/division, continuous_gold_border)
-    
-    if display:
-        #Set the window to be able to be resized
-        cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
-        #Resize the window
-        if pi:
-            cv2.resizeWindow("Edge pattern", 200, 200)
+        #print(where_gold.shape[0] * (division - 3)/division, continuous_gold_border)
+        
+        if display:
+            #Set the window to be able to be resized
+            cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
+            #Resize the window
+            if pi:
+                cv2.resizeWindow("Edge pattern", 200, 200)
+            else:
+                cv2.resizeWindow("Edge pattern", 700,700)
+            #Show the image
+            cv2.imshow("Edge pattern", image)
+            #Wait for keypress
+            cv2.waitKey(1)
+        
+        if all(ele > where_gold.shape[0] * (division - 3)/division for ele in continuous_gold_border):
+            output = True
         else:
-            cv2.resizeWindow("Edge pattern", 700,700)
-        #Show the image
-        cv2.imshow("Edge pattern", image)
-        #Wait for keypress
-        cv2.waitKey(1)
-    
-    if all(ele > where_gold.shape[0] * (division - 3)/division for ele in continuous_gold_border):
-        output = True
+            output = False
     else:
-        output = False
+        print(detections)
 
     return output
 
@@ -1357,10 +1373,14 @@ def main():
         #Compare the color detection array of the current image with the last image to deterime the move that was made
         if not np.array_equal(old_color_array, new_color_array):
             move = color_array_to_uci(old_color_array, new_color_array, board)
-            #Compute the move variable using the chess library
-            move = chess.Move.from_uci(move)
         else:
             continue
+        
+        if (move == ['','']):
+            continue
+        else:
+            #Compute the move variable using the chess library
+            move = chess.Move.from_uci(move)
         
         #If it's time to check the computer's move was properly carried out
         if vs_comp and (turn_background[2] == 0):
