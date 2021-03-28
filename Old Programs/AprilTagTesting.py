@@ -52,14 +52,14 @@ cv2.destroyAllWindows()
 #------------------------------------------------SINGLE IMAGE-------------------------------------------------
 
 # Radius of circle
-radius = 10
+radius = 2
 
 #imagepath = '/home/pi/Pictures/18in.jpg'
 #imagepath = 'aprilTagImageBorders.jpg'
 #imagepath = '/home/blemay360/1EB8-1359/on_four_wot.jpg'
 
 start_time = time.time()
-imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/PiImages/1.jpg'
+imagepath = '/home/blemay360/Pictures/index.jpeg'
 image = cv2.imread(imagepath)
 
 #image = imutils.rotate(image, 180)
@@ -73,19 +73,19 @@ detections = detector.detect(gray_img)
 print(time.time() - start_time)
 
 #----------------------------------------
-start_time = time.time()
-imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/PiImages/1_cropped.jpg'
-image = cv2.imread(imagepath)
+#start_time = time.time()
+#imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/PiImages/1_cropped.jpg'
+#image = cv2.imread(imagepath)
 
-#image = imutils.rotate(image, 180)
+##image = imutils.rotate(image, 180)
 
-gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+#gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
 
-detector = apriltag("tag16h5")
+#detector = apriltag("tag16h5")
 
-detections = detector.detect(gray_img)
+#detections = detector.detect(gray_img)
 
-print(time.time() - start_time)
+#print(time.time() - start_time)
 #----------------------------------------
 
 
@@ -95,8 +95,9 @@ print(detections)
 colors = {0:(255, 0, 255), 1:(0, 0, 255), 2:(0, 255, 0), 3:(255, 0, 0)}
 
 for i in range(len(detections)):
-    if (detections[i]['margin'] > 50):
-        center_coordinates = (int(round(detections[i]["lb-rb-rt-lt"][0][0])), int(round(detections[i]["lb-rb-rt-lt"][0][1])))
+    if (detections[i]['margin'] > 15):
+        #center_coordinates = (int(round(detections[i]["lb-rb-rt-lt"][0][0])), int(round(detections[i]["lb-rb-rt-lt"][0][1])))
+        center_coordinates = (int(round(detections[i]["center"][0])), int(round(detections[i]["center"][1])))
     
         # Using cv2.circle() method
         # Draw a circle with blue line borders of thickness of 2 px
@@ -110,5 +111,5 @@ cv2.imshow("image", image)
 
 #if cv2.waitKey(0) & 0xff == 27:  
     #cv2.destroyAllWindows() 
-cv2.waitKey(1)
+cv2.waitKey(0)
 

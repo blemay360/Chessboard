@@ -843,7 +843,7 @@ def process_frame(frame, turn_background, first_frame, previous_detections=False
     apriltagCorners, shifted, color_detection, piece_detection = copy_image(frame, 4)            
 
     #If 4 apriltags are seen (one in each 4 corners of chessboard), crop image and run detection functions
-    if detections and valid_frame:        
+    if detections:        
         #Place circles on inside corners of each apriltag
         #circle_image(apriltagCorners, grab_inside_corners(detections), 'red', 'picture')
         #show_images('resize', ('Apriltag Corners', apriltagCorners))
@@ -1252,17 +1252,6 @@ def pi_take_image(camera):
 #-----------------------------------------MAIN FUNCTION
 def main():
     global engine
-    #Create a gui to display the state of the chessboard, saving the window it creates and the size of each square in the chessboard for later functions
-    window, square_size = create_gui()
-
-    #Create a board array to keep track of the images displayed on the gui chessboard
-    board_array = create_board_array()
-
-    #Create a board variable to keep track of the game
-    board = chess.Board()
-
-    #Print the chessboard to the window
-    print_board(window, board_array, square_size)
     
     #Set desired difficulty of the computer
     #If playing computer, use desired difficulty
@@ -1278,6 +1267,18 @@ def main():
     #Initialize a variable to keep track of how many white and black pieces are on the board, and which side just moved
     turn_background = [16, 16, 0]
     #[# of white pieces on board, # of black pieces on board, 0=black just moved | 1=white just moved]
+
+    #Create a board array to keep track of the images displayed on the gui chessboard
+    board_array = create_board_array()
+
+    #Create a board variable to keep track of the game
+    board = chess.Board()
+
+    #Create a gui to display the state of the chessboard, saving the window it creates and the size of each square in the chessboard for later functions
+    window, square_size = create_gui()
+
+    #Print the chessboard to the window
+    print_board(window, board_array, square_size)
     
     if pi:
         #Set up camera
