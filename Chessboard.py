@@ -765,10 +765,10 @@ def edge_clear(image, detections):
         
         where_gold[(image.shape[0] // division):(image.shape[0] - image.shape[0] // division), (image.shape[1] // division):(image.shape[1] - image.shape[1] // division)] = 0
         
-        where_gold = cv2.medianBlur(where_gold, 3)
+        #where_gold = cv2.medianBlur(where_gold, 5)
         
         #where_gold = cv2.inRange(where_gold, 10, 90)
-        #where_gold = cv2.inRange(where_gold, 10, 40)
+        where_gold = cv2.inRange(where_gold, 10, 40)
         #where_gold = cv2.inRange(where_gold, 25, 85)
             
         if display and True:
@@ -787,7 +787,7 @@ def edge_clear(image, detections):
         #print(np.count_nonzero(where_gold))
         #Got 324054 on a trial
         
-        linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 100, None, 50, 10)
+        linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 100, None, 2*where_gold.shape[0]//3, where_gold.shape[0]//division)
         
         continuous_gold_border = [0] * 4
             
@@ -834,7 +834,7 @@ def edge_clear(image, detections):
             #Show the image
             cv2.imshow("Edge pattern", image)
             #Wait for keypress
-            cv2.waitKey(1)
+            cv2.waitKey(0)
         
         if all(ele > where_gold.shape[0] * (division - 3)/division for ele in continuous_gold_border):
             output = True
@@ -1305,7 +1305,9 @@ def main():
         input_image = imutils.rotate(input_image, 180)
     else:
         #Read the first frame in
-        input_image = cv2.imread(image_directory + '1.jpg')
+        #input_image = cv2.imread(image_directory + '1.jpg')
+        #input_image = cv2.imread('BorderObstructionTesting_clear.jpg')
+        input_image = cv2.imread('BorderObstructionTesting_blocked.jpg')
         
     if display_input:
             #Show the input image
