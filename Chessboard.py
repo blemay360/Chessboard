@@ -60,7 +60,7 @@ def detect_apriltags(family, image, previous_detections=False):
     gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
 
     #If we have the previous location for each tag and already know where to look
-    if previous_detections:
+    if previous_detections and not any(map(lambda ele: ele is None, previous_detections)):
         #For reference, on a sample image, measuring the entire image of 4 apriltags took 0.7629 seconds, one cropped apriltag took 0.0028 seconds
         #Empty list to add dictionaries for each tag to
         detection_list = []
@@ -261,7 +261,16 @@ def measure_distance(pt1, pt2):
     Uses pythagorean theorem to calculate distance
     Distance is returned as an int
     '''
-    return int(math.sqrt((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2))
+    return int(math.sqrt((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2)) 
+
+def measure_angle(pt1, pt2):
+    theta = abs(math.atan2(pt2[1] - pt1[1], pt2[0] - pt1[0]))
+    if (theta < 1.6) and (theta > 1.5):
+        return 1
+    elif (theta < 0.1) and (theta > 0):
+        return 0
+    else:
+        return "Trigger a type error in measure_angle"
 
 def circle_image(image, coordinates, color, ratio):
     '''
@@ -756,38 +765,49 @@ def edge_clear(image, detections):
         #Crop and perspective shift image using the outside corners of the apriltags
         image = perspective_shift(image, outside_corners)
         
+        w = image.shape[0]
+        h = image.shape[1]
+        
         #Factor to divide the image by, only the outside squares of width frame/division are used
         division = 16
+                
+        #where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)[:,:,0]
+        where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
         
-        #circle_image(image, (lt_inner, rt_inner, lb_inner, rb_inner), 'blue', 'picture')
+        where_gold = cv2.inRange(where_gold, 140, 255)
+        #where_gold = cv2.inRange(where_gold, 10, 40)
+        #where_gold = cv2.inRange(where_gold, 40, 140)
         
-        where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)[:,:,0]
-        
-        where_gold[(image.shape[0] // division):(image.shape[0] - image.shape[0] // division), (image.shape[1] // division):(image.shape[1] - image.shape[1] // division)] = 0
-        
-        #where_gold = cv2.medianBlur(where_gold, 5)
-        
-        #where_gold = cv2.inRange(where_gold, 10, 90)
-        where_gold = cv2.inRange(where_gold, 10, 40)
-        #where_gold = cv2.inRange(where_gold, 25, 85)
+        #Black out inside chessboard area
+        where_gold[(w // division):(w - w // division), (h // division):(h - h // division)] = 0
+        #Black out corners where apriltags are
+        #Top left
+        where_gold[0:(w // division), 0:(h // division)] = 0
+        #Top right
+        where_gold[(w - w // division):w, 0:(h // division)] = 0
+        #Bottom left
+        where_gold[0:(w // division), (h - h // division):h] = 0
+        #Bottom right
+        where_gold[(w - w // division):w, (h - h // division):h] = 0
             
-        if display and True:
+        if display:
             #Set the window to be able to be resized
-            cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Gold", cv2.WINDOW_NORMAL)
             #Resize the window
             if pi:
-                cv2.resizeWindow("Edge pattern", 200, 200)
+                cv2.resizeWindow("Gold", 200, 200)
             else:
-                cv2.resizeWindow("Edge pattern", 700,700)
+                cv2.resizeWindow("Gold", 700,700)
             #Show the image
-            cv2.imshow("Edge pattern", where_gold)
+            cv2.imshow("Gold", where_gold)
             #Wait for keypress
-            cv2.waitKey(0)
+            cv2.waitKey(1)
             
         #print(np.count_nonzero(where_gold))
         #Got 324054 on a trial
         
-        linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 100, None, 2*where_gold.shape[0]//3, where_gold.shape[0]//division)
+        linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 100, None, 2*where_gold.shape[0]//3, where_gold.shape[0]//(1.5*division))
+        #linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, where_gold.shape[0]//division, None, 2*where_gold.shape[0]//3, where_gold.shape[0]//(12*division))
         
         continuous_gold_border = [0] * 4
             
@@ -797,25 +817,25 @@ def edge_clear(image, detections):
                 start = (l[0], l[1])
                 end = (l[2], l[3])
                 #Left side
-                if (start[0] < where_gold.shape[0]/division) and (end[0] < where_gold.shape[0]/division):
+                if (start[0] < w // division) and (end[0] < w // division) and (measure_angle(start, end) == 1):
                     distance = measure_distance(start, end)
                     if (distance > continuous_gold_border[0]):
                         continuous_gold_border[0] = distance
                     cv2.line(image, (l[0], l[1]), (l[2], l[3]), (50,127,205), 3, cv2.LINE_AA)
                 #Right side
-                elif (start[0] > (division - 1) * where_gold.shape[0]/division) and (end[0] > (division - 1) * where_gold.shape[0]/division):
+                elif (start[0] > w - w // division) and (end[0] > w - w // division) and (measure_angle(start, end) == 1):
                     distance = measure_distance(start, end)
                     if (distance > continuous_gold_border[1]):
                         continuous_gold_border[1] = distance
                     cv2.line(image, (l[0], l[1]), (l[2], l[3]), (255,0,0), 3, cv2.LINE_AA)
                 #Top side
-                elif (start[1] < where_gold.shape[1]/division) and (end[1] < where_gold.shape[1]/division):
+                elif (start[1] < h // division) and (end[1] < h // division) and (measure_angle(start, end) == 0):
                     distance = measure_distance(start, end)
                     if (distance > continuous_gold_border[2]):
                         continuous_gold_border[2] = distance
                     cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,255,0), 3, cv2.LINE_AA)
                 #Bottom side
-                elif (start[1] > (division - 1) * where_gold.shape[1]/division) and (start[1] > (division - 1) * where_gold.shape[1]/division):
+                elif (start[1] > h - h // division) and (start[1] > h - h // division) and (measure_angle(start, end) == 0):
                     distance = measure_distance(start, end)
                     if (distance > continuous_gold_border[3]):
                         continuous_gold_border[3] = distance
@@ -834,7 +854,7 @@ def edge_clear(image, detections):
             #Show the image
             cv2.imshow("Edge pattern", image)
             #Wait for keypress
-            cv2.waitKey(0)
+            cv2.waitKey(1)
         
         if all(ele > where_gold.shape[0] * (division - 3)/division for ele in continuous_gold_border):
             output = True
@@ -1302,7 +1322,7 @@ def main():
         #Take an image from the camera
         input_image = pi_take_image(camera)
         #Rotate image 180 degrees to correct for camera flip
-        input_image = imutils.rotate(input_image, 180)
+        #input_image = imutils.rotate(input_image, 180)
     else:
         #Read the first frame in
         #input_image = cv2.imread(image_directory + '1.jpg')
@@ -1353,7 +1373,7 @@ def main():
         #Read the current frame
         if pi:
             input_image = pi_take_image(camera)
-            input_image = imutils.rotate(input_image, 180)
+            #input_image = imutils.rotate(input_image, 180)
         else:
             input_image = cv2.imread(image_directory + str(counter) + '.jpg')
         

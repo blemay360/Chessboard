@@ -1,10 +1,21 @@
-import cv2, imutils, time
+import cv2, imutils, time, os
 import numpy as np
 from apriltag import apriltag
+#If run on my laptop, disable pi specific code
+if (os.uname()[1] == "blemay360-Swift-SF314-53G"):
+    #print("Running on laptop")
+    pi = False
+#Else enable pi code
+else:
+    #print("Running on pi")
+    pi = True
+if pi:
+    from picamera.array import PiRGBArray
+    from picamera import PiCamera
 
 #------------------------------------------------SETUP-------------------------------------------------
   
-detector = apriltag("tag25h9")  
+detector = apriltag("tag16h5")  
 
 # Red color in BGR
 color = (0, 0, 255)
@@ -17,12 +28,28 @@ thickness = -1
 # Radius of circle
 radius = 3
 
-#cap = cv2.VideoCapture(0)
+if pi:
+    #Initialize the camera and grab a reference to the raw camera capture
+    camera = PiCamera()
+    #Set resolution
+    camera.resolution = (512, 384)
+else:
+    cap = cv2.VideoCapture(0)
 
 print('Switch to images. Then press q key to stop')
 
-while False:
-    [ok, frame] = cap.read()
+while True:
+    if pi:
+        #Get raw capture from camera
+        #For some reason this works better calling this line everytime
+        rawCapture = PiRGBArray(camera)
+        #Allow the camera to warmup
+        time.sleep(0.1)
+        #Grab an image from the camera
+        camera.capture(rawCapture, format="bgr")
+        frame = rawCapture.array
+    else:
+        [ok, frame] = cap.read()
 
     gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
 
@@ -31,9 +58,10 @@ while False:
     output = frame
     
     for i in range(len(detections)):
-        center_coordinates = (int(round(detections[i]["lb-rb-rt-lt"][0][0])), int(round(detections[i]["lb-rb-rt-lt"][0][1])))
+        #center_coordinates = (int(round(detections[i]["lb-rb-rt-lt"][0][0])), int(round(detections[i]["lb-rb-rt-lt"][0][1])))
+        center_coordinates = (int(round(detections[i]["center"][0])), int(round(detections[i]["center"][1])))
         
-        print(detections[i]['id'])
+        #print(detections[i]['id'])
 
         # Using cv2.circle() method
         # Draw a circle with blue line borders of thickness of 2 px
@@ -48,6 +76,7 @@ while False:
         break
 
 cv2.destroyAllWindows()
+print(detections)
 
 #------------------------------------------------SINGLE IMAGE-------------------------------------------------
 
