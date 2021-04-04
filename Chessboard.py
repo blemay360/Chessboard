@@ -768,13 +768,15 @@ def edge_clear(image, detections):
         w = image.shape[0]
         h = image.shape[1]
         
+        target = np.ones((w, h), dtype=int)
+        
         #Factor to divide the image by, only the outside squares of width frame/division are used
-        division = 16
+        division = 32
                 
         #where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)[:,:,0]
         where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
         
-        where_gold = cv2.inRange(where_gold, 140, 255)
+        where_gold = cv2.inRange(where_gold, 150, 255)
         #where_gold = cv2.inRange(where_gold, 10, 40)
         #where_gold = cv2.inRange(where_gold, 40, 140)
         
@@ -782,14 +784,29 @@ def edge_clear(image, detections):
         where_gold[(w // division):(w - w // division), (h // division):(h - h // division)] = 0
         #Black out corners where apriltags are
         #Top left
-        where_gold[0:(w // division), 0:(h // division)] = 0
+        where_gold[0:2*(w // division), 0:2*(h // division)] = 0
         #Top right
-        where_gold[(w - w // division):w, 0:(h // division)] = 0
+        where_gold[(w - 2* w // division):w, 0: 2*(h // division)] = 0
         #Bottom left
-        where_gold[0:(w // division), (h - h // division):h] = 0
+        where_gold[0:2*(w // division), (h - 2 * h // division):h] = 0
         #Bottom right
-        where_gold[(w - w // division):w, (h - h // division):h] = 0
-            
+        where_gold[(w - 2 * w // division):w, (h - 2 * h // division):h] = 0
+        
+        #Black out inside chessboard area
+        target[(w // division):(w - w // division), (h // division):(h - h // division)] = 0
+        #Black out corners where apriltags are
+        #Top left
+        target[0:2*(w // division), 0:2*(h // division)] = 0
+        #Top right
+        target[(w - 2* w // division):w, 0: 2*(h // division)] = 0
+        #Bottom left
+        target[0:2*(w // division), (h - 2 * h // division):h] = 0
+        #Bottom right
+        target[(w - 2 * w // division):w, (h - 2 * h // division):h] = 0
+        
+        #target = 2 * (w - 4 * (w // division)) * h // division + 2 * (h - 4 * (h // division)) * w // division
+        print("target " + str(np.count_nonzero(target)))
+        
         if display:
             #Set the window to be able to be resized
             cv2.namedWindow("Gold", cv2.WINDOW_NORMAL)
@@ -802,11 +819,8 @@ def edge_clear(image, detections):
             cv2.imshow("Gold", where_gold)
             #Wait for keypress
             cv2.waitKey(1)
-            
-        #print(np.count_nonzero(where_gold))
-        #Got 324054 on a trial
         
-        linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 100, None, 2*where_gold.shape[0]//3, where_gold.shape[0]//(1.5*division))
+        linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 10, None, (division - 3)*w // division, w//(12*division))
         #linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, where_gold.shape[0]//division, None, 2*where_gold.shape[0]//3, where_gold.shape[0]//(12*division))
         
         continuous_gold_border = [0] * 4
@@ -862,6 +876,13 @@ def edge_clear(image, detections):
             output = False
     else:
         print(detections)
+        
+    print(np.count_nonzero(where_gold))
+    
+    if (np.count_nonzero(where_gold) == np.count_nonzero(target)):
+        output = True
+    else:
+        output = False
 
     return output
 
