@@ -11,7 +11,7 @@ tag_family = 'tag16h5'
 #Default edge_count_threshold, gets updated on first frame to better suit current conditions
 edge_count_threshold = 50000
 #File directory to get images from
-image_directory = 'TestingImages/PiImages/'
+image_directory = 'TestingImages/KnotTesting/'
 
 #Importing needed libraries
 import contextlib
@@ -20,6 +20,10 @@ with contextlib.redirect_stdout(None):
 import chess, time, pygame, chess.engine, cv2, copy, math, os, sys, imutils
 import numpy as np
 from apriltag import apriltag
+from sklearn.cluster import KMeans
+
+#Open reference image with border pattern
+border_template = cv2.imread('ComparisonImages/11in_TestChessboard_16h5_Comparison_5pt.png')
 
 #If run on my laptop, disable pi specific code
 if (os.uname()[1] == "blemay360-Swift-SF314-53G"):
@@ -453,7 +457,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
             square = detection_image[lt[1]:rb[1], lt[0]:rb[0]]
             
             #Perform edge detection on the square, replacing the relevant part of the input image with the edge detection array, storing the edge count in the edge_count array, and taking in the center of mass of the detected edges as well as the standard deviation of points
-            detection_image[lt[1]:rb[1], lt[0]:rb[0]], edge_count[y][x], x_average, y_average, std = edge_detection(square)            
+            detection_image[lt[1]:rb[1], lt[0]:rb[0]], edge_count[y][x], x_average, y_average, std = piece_detection(square)            
             
             #If this is the first frame, all squares in the 0th, 1st, 6th, and 7th are known to be occupied
             if first_frame and ((y == 0) or (y == 1) or (y == 6) or (y == 7)):
@@ -540,7 +544,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
     #print(color_array)
     return detection_image, detection_array, color_image, color_array
 
-def edge_detection(image):
+def piece_detection(image):
     '''
     Function to perform edge detection on an image, and return the array of edges and how many edge were measured, as well as the center of mass of the edges and the standard deviation of the edges
     Takes in the image to measure, and outputs the measured image and the number of edges
@@ -753,139 +757,157 @@ def average_color(image, x, y, radius):
     
     return color_measure, color
 
-def edge_clear(image, detections):
-    display = True
-    #(190, 170, 133)
-    
-    output = False
-    
+def focus_on_border(image, detections):
+    '''
+    Function to black out apriltags and inside of chessboard
+    Takes the image to black out, and the apriltag detections
+    Returns the blacked out image
+    '''
+    #Retrieve inside corners
+    inside_corners = grab_inside_corners(detections)
+    #Retrieve outside corners
     outside_corners = grab_outside_corners(detections)
     
+    #Make an empty array the size of the input image to run through a perspective shift
+    inside_corner_array = np.zeros(shape=[image.shape[0], image.shape[1]], dtype=np.uint8)
+    #Add in white pixels at each 4 inside corners
+    for corner in inside_corners:
+        inside_corner_array[corner[1]][corner[0]] = 255
+    
+    #Shift image with colored inside corners
+    shifted_inside_corner = perspective_shift(inside_corner_array, outside_corners)
+    
+    #Get the locations of each nonzero pixels in the shifted image
+    points = np.nonzero(shifted_inside_corner)
+    
+    #Make an empty array to store nonzero points in
+    corners = [0] * len(points[0])
+    
+    #For each nonzero pixel
+    for i in range(len(points[0])):
+        #Add the coordinates to the corners array
+        corners[i] = [points[0][i], points[1][i]]
+    
+    #Use K mean classification to find the centers of the 4 clusters at each corner
+    kmeans = KMeans(n_clusters=4, random_state=0).fit(corners)
+    
+    #Map the cluster centers to two lists of the x and y coordinates, each list is a masked array
+    x_list, y_list = map(np.ma.array, zip(*kmeans.cluster_centers_))
+    
+    #Get the indicies of each corners coordinate in x_list and y_list
+    #The top left corner will have the lowest summed coordinates since the origin is in the top left corner
+    top_left = np.argmin(x_list + y_list)
+    #Mask the top left coordinate so it isn't considered for a different corner
+    x_list[top_left] = np.ma.masked
+    #The bottom right corner will have the highest summed coordinates since it's furthest from the origin
+    bottom_right = np.nanargmax(x_list + y_list)
+    #The bottom left corner will be the one with the lowest remaining x coordinate (since top left is masked and not considered)
+    bottom_left = np.nanargmin(x_list)
+    #The top right corner is the last remaining corner
+    top_right = 6 - top_left - bottom_right - bottom_left
+    
+    #Remove the mask from the x coordinate list to make the top left value usable
+    x_list.mask = np.ma.nomask
+            
+    #Convert the four indicies into integer coordinates of each corner
+    top_left = (int(x_list[top_left]), int(y_list[top_left]))
+    bottom_right = (int(x_list[bottom_right]), int(y_list[bottom_right]))
+    bottom_left = (int(x_list[bottom_left]), int(y_list[bottom_left]))
+    top_right = (int(x_list[top_right]), int(y_list[top_right]))
+    
+    #Black out inside chessboard area
+    image[top_left[1]:bottom_left[1], top_left[0]:top_right[0]] = 0
+    #Black out corners where apriltags are
+    #Top left
+    image[0:top_left[1]+5, 0:top_left[1]+5] = 0
+    #Top right
+    image[0:top_right[1]+5, top_right[0]-5:image.shape[1]] = 0
+    #Bottom left
+    image[bottom_left[1]-5:image.shape[0], 0:bottom_left[0]+5] = 0
+    #Bottom right
+    image[bottom_right[1]-5:image.shape[0], bottom_right[0]-5:image.shape[1]] = 0
+    
+    return image
+
+def knot_detection(image, detections):
+    '''
+    Function to observe linear celtic knot pattern around border of chessboard and check whether any part of the pattern isn't visible
+    Takes in the image to check and location of apriltags in the image
+    Returns true if the image isn't blocked, false if it is blocked
+    '''
+    global border_template
+    #Whether to display the output
+    display = True
+    
+    #Convert copy of the reference image to grayscale
+    template = cv2.cvtColor(copy.copy(border_template), cv2.COLOR_BGR2GRAY)
+    
+    #Retrive outside corners of the apriltags
+    outside_corners = grab_outside_corners(detections)
+    
+    #If all the outside corners were found
     if not any(map(lambda ele: ele is None, outside_corners)):
         #Crop and perspective shift image using the outside corners of the apriltags
         image = perspective_shift(image, outside_corners)
+
+        #Blur the image to get rid of noise and bad edge measurements
+        blurred = cv2.medianBlur(image,3)
+        #Perform edge measurement
+        edges = cv2.Canny(blurred,80,100)
+
+        #Black out the apriltags and the inside chessboard area, leaving only the knot pattern
+        edges = focus_on_border(edges, detections)
         
+        #Get input image size
         w = image.shape[0]
         h = image.shape[1]
         
-        target = np.ones((w, h), dtype=int)
+        #The reference images had a border around the apriltag, the apriltag detection from the camera doesn't leave any border, the offset is how many pixels to cut off from the edges
+        offset = 24 #Math says this value should be 34, but there might be some camera distortion that makes 24 work better
+        #Crop the border around the edges of the reference image and resize it to the same size of the input image
+        template = cv2.resize(template[offset:3300-offset, offset:3300-offset], (w, h))
+        #Boost any nonzero template value to 255 since resizing lowers some edge values
+        template = cv2.inRange(template, 1, 255)
         
-        #Factor to divide the image by, only the outside squares of width frame/division are used
-        division = 32
-                
-        #where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)[:,:,0]
-        where_gold = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        #Keep only the edges that fall inside the template
+        edges = template - cv2.inRange(template - edges, 127, 255)        
         
-        where_gold = cv2.inRange(where_gold, 150, 255)
-        #where_gold = cv2.inRange(where_gold, 10, 40)
-        #where_gold = cv2.inRange(where_gold, 40, 140)
+        #Size of the square to use in blurring, large = more blurred
+        ksize = (60, 60)
+        #Blur edges to expand how much space is taken up by the edge lines
+        edges_blurred = cv2.blur(edges, ksize)
+        #Boost any nonzero edge values to 255
+        edges_blurred = cv2.inRange(edges_blurred, 1, 255)
         
-        #Black out inside chessboard area
-        where_gold[(w // division):(w - w // division), (h // division):(h - h // division)] = 0
-        #Black out corners where apriltags are
-        #Top left
-        where_gold[0:2*(w // division), 0:2*(h // division)] = 0
-        #Top right
-        where_gold[(w - 2* w // division):w, 0: 2*(h // division)] = 0
-        #Bottom left
-        where_gold[0:2*(w // division), (h - 2 * h // division):h] = 0
-        #Bottom right
-        where_gold[(w - 2 * w // division):w, (h - 2 * h // division):h] = 0
+        #Subtract blurred edges from template, any remaining nonzero pixels are pixels that were blocked from camera view
+        blocked_edges = cv2.inRange(template - edges_blurred, 127, 255)
         
-        #Black out inside chessboard area
-        target[(w // division):(w - w // division), (h // division):(h - h // division)] = 0
-        #Black out corners where apriltags are
-        #Top left
-        target[0:2*(w // division), 0:2*(h // division)] = 0
-        #Top right
-        target[(w - 2* w // division):w, 0: 2*(h // division)] = 0
-        #Bottom left
-        target[0:2*(w // division), (h - 2 * h // division):h] = 0
-        #Bottom right
-        target[(w - 2 * w // division):w, (h - 2 * h // division):h] = 0
-        
-        #target = 2 * (w - 4 * (w // division)) * h // division + 2 * (h - 4 * (h // division)) * w // division
-        print("target " + str(np.count_nonzero(target)))
+        #Stack the blocked edges, edges, and blurred edges to all display in the same image
+        output = np.stack((template // 4, edges_blurred // 4, blocked_edges // 2), axis=-1)
         
         if display:
             #Set the window to be able to be resized
-            cv2.namedWindow("Gold", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Edges", cv2.WINDOW_NORMAL)
             #Resize the window
             if pi:
-                cv2.resizeWindow("Gold", 200, 200)
+                cv2.resizeWindow("Edges", 200, 200)
             else:
-                cv2.resizeWindow("Gold", 700,700)
-            #Show the image
-            cv2.imshow("Gold", where_gold)
+                cv2.resizeWindow("Edges", 700,700)
+            #Show calculated results over the image
+            cv2.imshow("Edges", image // 2 + output)
             #Wait for keypress
             cv2.waitKey(1)
         
-        linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, 10, None, (division - 3)*w // division, w//(12*division))
-        #linesP = cv2.HoughLinesP(where_gold, 1, np.pi / 180, where_gold.shape[0]//division, None, 2*where_gold.shape[0]//3, where_gold.shape[0]//(12*division))
-        
-        continuous_gold_border = [0] * 4
-            
-        if linesP is not None:
-            for i in range(0, len(linesP)):
-                l = linesP[i][0]
-                start = (l[0], l[1])
-                end = (l[2], l[3])
-                #Left side
-                if (start[0] < w // division) and (end[0] < w // division) and (measure_angle(start, end) == 1):
-                    distance = measure_distance(start, end)
-                    if (distance > continuous_gold_border[0]):
-                        continuous_gold_border[0] = distance
-                    cv2.line(image, (l[0], l[1]), (l[2], l[3]), (50,127,205), 3, cv2.LINE_AA)
-                #Right side
-                elif (start[0] > w - w // division) and (end[0] > w - w // division) and (measure_angle(start, end) == 1):
-                    distance = measure_distance(start, end)
-                    if (distance > continuous_gold_border[1]):
-                        continuous_gold_border[1] = distance
-                    cv2.line(image, (l[0], l[1]), (l[2], l[3]), (255,0,0), 3, cv2.LINE_AA)
-                #Top side
-                elif (start[1] < h // division) and (end[1] < h // division) and (measure_angle(start, end) == 0):
-                    distance = measure_distance(start, end)
-                    if (distance > continuous_gold_border[2]):
-                        continuous_gold_border[2] = distance
-                    cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,255,0), 3, cv2.LINE_AA)
-                #Bottom side
-                elif (start[1] > h - h // division) and (start[1] > h - h // division) and (measure_angle(start, end) == 0):
-                    distance = measure_distance(start, end)
-                    if (distance > continuous_gold_border[3]):
-                        continuous_gold_border[3] = distance
-                    cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
-
-        #print(where_gold.shape[0] * (division - 3)/division, continuous_gold_border)
-        
-        if display:
-            #Set the window to be able to be resized
-            cv2.namedWindow("Edge pattern", cv2.WINDOW_NORMAL)
-            #Resize the window
-            if pi:
-                cv2.resizeWindow("Edge pattern", 200, 200)
-            else:
-                cv2.resizeWindow("Edge pattern", 700,700)
-            #Show the image
-            cv2.imshow("Edge pattern", image)
-            #Wait for keypress
-            cv2.waitKey(1)
-        
-        if all(ele > where_gold.shape[0] * (division - 3)/division for ele in continuous_gold_border):
-            output = True
+        #If there were no blocked edges return true
+        if not np.count_nonzero(blocked_edges):
+            return True
+        #Else return false
         else:
-            output = False
+            return False
+    #If there was an apriltag corner missing, return false
     else:
-        print(detections)
-        
-    print(np.count_nonzero(where_gold))
+        return False
     
-    if (np.count_nonzero(where_gold) == np.count_nonzero(target)):
-        output = True
-    else:
-        output = False
-
-    return output
-
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTION
 def process_frame(frame, turn_background, first_frame, previous_detections=False):
     valid_frame = True
@@ -907,7 +929,7 @@ def process_frame(frame, turn_background, first_frame, previous_detections=False
         #show_images('resize', ('Apriltag Corners', apriltagCorners))
         #cv2.waitKey(0)
                 
-        if not edge_clear(frame, detections):
+        if not knot_detection(frame, detections):
             #print("Gold border not clear")
             valid_frame = False
             color_array = np.zeros((8, 8), dtype=int)
@@ -1346,9 +1368,8 @@ def main():
         #input_image = imutils.rotate(input_image, 180)
     else:
         #Read the first frame in
-        #input_image = cv2.imread(image_directory + '1.jpg')
-        #input_image = cv2.imread('BorderObstructionTesting_clear.jpg')
-        input_image = cv2.imread('BorderObstructionTesting_blocked.jpg')
+        input_image = cv2.imread(image_directory + '1.jpg')
+        #input_image = cv2.imread(image_directory + 'medium_block.jpg')
         
     if display_input:
             #Show the input image

@@ -83,12 +83,12 @@ print(detections)
 # Radius of circle
 radius = 10
 
-imagepath = '/home/pi/Chessboard/TestingImages/WoodenBoard.jpg'
+#imagepath = '/home/pi/Chessboard/TestingImages/WoodenBoard.jpg'
 #imagepath = 'aprilTagImageBorders.jpg'
 #imagepath = '/home/blemay360/1EB8-1359/on_four_wot.jpg'
+imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/KnotTesting/3.jpg'
 
 start_time = time.time()
-#imagepath = '/home/blemay360/Documents/chessboard-main/TestingImages/WoodenBoard.jpg'
 image = cv2.imread(imagepath)
 
 #image = imutils.rotate(image, 180)
@@ -106,10 +106,10 @@ print(time.time() - start_time)
 #print(detections[0]['lb-rb-rt-lt'][1])
 print(detections)
 
-colors = {0:(255, 0, 255), 1:(0, 0, 255), 2:(0, 255, 0), 3:(255, 0, 0)}
+colors = {0:(255, 0, 255), 1:(0, 0, 255), 2:(0, 255, 0), 3:(255, 0, 0), 4:(255, 255, 255), 5:(255, 255, 255), 6:(255, 255, 255), 7:(255, 255, 255), 8:(255, 255, 255), 9:(255, 255, 255), 10:(255, 255, 255), 11:(255, 255, 255)}
 
 for i in range(len(detections)):
-    if (detections[i]['margin'] > 50):
+    if (detections[i]['margin'] > 30):
         center_coordinates = (int(round(detections[i]["lb-rb-rt-lt"][0][0])), int(round(detections[i]["lb-rb-rt-lt"][0][1])))
     
         # Using cv2.circle() method
@@ -117,8 +117,11 @@ for i in range(len(detections)):
         image = cv2.circle(image, center_coordinates, radius, colors[i], thickness)
 
 cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-#cv2.resizeWindow('image', 800,1200)
-cv2.resizeWindow('image', 200, 200)
+if pi:
+    cv2.resizeWindow('image', 200, 200)
+else:
+    cv2.resizeWindow('image', 800,1200)
+
 
 cv2.imshow("image", image)
 
