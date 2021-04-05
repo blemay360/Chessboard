@@ -22,9 +22,6 @@ import numpy as np
 from apriltag import apriltag
 from sklearn.cluster import KMeans
 
-#Open reference image with border pattern
-border_template = cv2.imread('ComparisonImages/11in_TestChessboard_16h5_Comparison_5pt.png')
-
 #If run on my laptop, disable pi specific code
 if (os.uname()[1] == "blemay360-Swift-SF314-53G"):
     #print("Running on laptop")
@@ -829,13 +826,12 @@ def focus_on_border(image, detections):
     
     return image
 
-def knot_detection(image, detections):
+def knot_detection(image, border_template, detections):
     '''
     Function to observe linear celtic knot pattern around border of chessboard and check whether any part of the pattern isn't visible
     Takes in the image to check and location of apriltags in the image
     Returns true if the image isn't blocked, false if it is blocked
     '''
-    global border_template
     #Whether to display the output
     display = True
     
@@ -909,7 +905,7 @@ def knot_detection(image, detections):
         return False
     
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTION
-def process_frame(frame, turn_background, first_frame, previous_detections=False):
+def process_frame(frame, border_template, turn_background, first_frame, previous_detections=False):
     valid_frame = True
         
     if first_frame:
@@ -929,7 +925,7 @@ def process_frame(frame, turn_background, first_frame, previous_detections=False
         #show_images('resize', ('Apriltag Corners', apriltagCorners))
         #cv2.waitKey(0)
                 
-        if not knot_detection(frame, detections):
+        if not knot_detection(frame, border_template, detections):
             #print("Gold border not clear")
             valid_frame = False
             color_array = np.zeros((8, 8), dtype=int)
@@ -1359,6 +1355,9 @@ def main():
     turn_background = [16, 16, 0]
     #[# of white pieces on board, # of black pieces on board, 0=black just moved | 1=white just moved]
     
+    #Open reference image with border pattern
+    border_template = cv2.imread('ComparisonImages/11in_TestChessboard_16h5_Comparison_5pt.png')
+    
     if pi:
         #Set up camera
         camera = setup_camera()
@@ -1378,7 +1377,7 @@ def main():
             cv2.waitKey(10)
         
     #Save the color array as old to compare with the second frame later
-    valid_frame, previous_detections, old_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, True)
+    valid_frame, previous_detections, old_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, True)
     
     #Show the grayscale color detection image and piece detection image
     show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
@@ -1420,7 +1419,7 @@ def main():
             input_image = cv2.imread(image_directory + str(counter) + '.jpg')
         
         #Process the current frame
-        valid_frame, previous_detections, new_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, False, previous_detections)
+        valid_frame, previous_detections, new_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, False, previous_detections)
         
          #Show the grayscale color detection image and piece detection image for the current image
         show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
