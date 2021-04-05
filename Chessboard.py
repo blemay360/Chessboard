@@ -1,99 +1,240 @@
 #Variables to change stuff on a high level
-#Whether code is being run on the pi
-pi = False
 #Whether to display the input image
 display_input = False
 #Whether to wait for a keypress on each image or not
-wait = True
+wait = False
+#Whether to play against a computer
+vs_comp = True
 #Which apriltags should be looked for
 #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
 tag_family = 'tag16h5'
+#Default edge_count_threshold, gets updated on first frame to better suit current conditions
+edge_count_threshold = 50000
+#File directory to get images from
+image_directory = 'TestingImages/KnotTesting/'
 
 #Importing needed libraries
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
-import chess, time, pygame, chess.engine, cv2, copy, math
+import chess, time, pygame, chess.engine, cv2, copy, math, os, sys, imutils
 import numpy as np
 from apriltag import apriltag
+from sklearn.cluster import KMeans
+
+#Open reference image with border pattern
+border_template = cv2.imread('ComparisonImages/11in_TestChessboard_16h5_Comparison_5pt.png')
+
+#If run on my laptop, disable pi specific code
+if (os.uname()[1] == "blemay360-Swift-SF314-53G"):
+    #print("Running on laptop")
+    pi = False
+#Else enable pi code
+else:
+    #print("Running on pi")
+    pi = True
+
+#Import pi specific libraries
 if pi:
     from picamera.array import PiRGBArray
     from picamera import PiCamera
 
 '''
 -----------------------------------------TO DO--------------------------------------------------
-Adapt color detection function to work with large board
-Test large board with pi
+Look into discarding frames on consececutive frames being similar
 Test error detection for get_detection_array 
     Take off two pieces at once
     Add an extra piece
 Add adaptive thresholding to get_detection_array
-?Make new function for processing first image
 '''
 
+def end_program():
+    global engine
+    engine.quit()
+
 #-----------------------------------------APRILTAG FUNCTIONS
-def detect_apriltags(family, image):
+def detect_apriltags(family, image, previous_detections=False):
     '''
     Takes a family of apriltags to look for, as well as an image to look at, and returns an array with a dictionary of detection info for each apriltag detected in the image
     '''
     #Only needs to be done once, but for ease of coding we'll do it every function call
     detector = apriltag(family)
-    
+        
     #Convert input image to grayscale
     gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
 
-    #Look for apriltags
-    detections = detector.detect(gray_img)
+    #If we have the previous location for each tag and already know where to look
+    if previous_detections and not any(map(lambda ele: ele is None, previous_detections)):
+        #For reference, on a sample image, measuring the entire image of 4 apriltags took 0.7629 seconds, one cropped apriltag took 0.0028 seconds
+        #Empty list to add dictionaries for each tag to
+        detection_list = []
+        #Percent to increase the corner location of the window
+        percent_increase = 1.3
+        #Dictionary to help cycle through each corner
+        corners_dict = {0:'lb', 1:'rb', 2:'rt', 3:'lt'}
+        #Go through each tag
+        for tag_id in range(4):
+            #Find the lowest y value of the top two tag corners
+            top = min(return_tag_info(previous_detections, tag_id, 'lt')[1], return_tag_info(previous_detections, tag_id, 'rt')[1])
+            #Find the highest y value of the lower two tag corners
+            bottom = max(return_tag_info(previous_detections, tag_id, 'lb')[1], return_tag_info(previous_detections, tag_id, 'rb')[1])
+            #Find the lowest x value of the left 80two tag corners
+            left = min(return_tag_info(previous_detections, tag_id, 'lt')[0], return_tag_info(previous_detections, tag_id, 'lb')[0])
+            #Find the highest x value of the right two tag corners
+            right = max(return_tag_info(previous_detections, tag_id, 'rt')[0], return_tag_info(previous_detections, tag_id, 'rb')[0])
+            
+            #Slightly increase the window to look for the apriltag in
+            top = bottom - int(percent_increase * abs(bottom - top))
+            bottom = top + int(percent_increase * abs(bottom - top))
+            left = right - int(percent_increase * abs(right - left))
+            right = left + int(percent_increase * abs(right - left))
+            
+            #Search for an apriltag in the area arounnd the last seen tag
+            detections = detector.detect(gray_img[top:bottom, left:right])
+            
+            #If there was an apriltag detected
+            if (detections != ()):
+                #Offset the coordinates from the detections to apply to the whole image, not the closely cropped one
+                offset_center = (return_tag_info(detections, tag_id, 'center')[0] + left, return_tag_info(detections, tag_id, 'center')[1] + top)
+                #Initialize list to store the coordinates of the offset coordinates
+                offset_corners = [0] * 4
+                #Go through each corner to offset the coordinates
+                for i in range(4):
+                    #Offset coordinates for the cuurent corner and add to the offset_corners list
+                    offset_corners[i] = [return_tag_info(detections, tag_id, corners_dict[i])[0] + left, return_tag_info(detections, tag_id, corners_dict[i])[1] + top]
+                #Reconstruct dictionary for the current tag and append to the list of tags
+                detection_list.append({'hamming':return_tag_info(detections, tag_id, 'hamming'), 'margin':return_tag_info(detections, tag_id, 'margin'), 'id':return_tag_info(detections, tag_id, 'id'), 'center':offset_center, 'lb-rb-rt-lt':offset_corners})
+            else:
+                detection_list.append(None)
+                
+        #Convert list of detections to tuple to return to original variable type
+        detections = tuple(detection_list)
+    else:
+        detections = None
+
+    if not previous_detections or any(map(lambda ele: ele is None, detections)):
+        #Look for apriltags
+        detections = detector.detect(gray_img)
+        
+        #Make an empty list to add tags with the correct ids
+        pruned_detection_list = []
+        #Make an empty list to add margins to only keep best tags of each id
+        margin_list = [0]*4
+        #For each detected tag
+        for tag in detections:
+            #If the tag id is 0, 1, 2, or 3 and the detection confidence is good
+            if (tag['id'] < 4) and (tag['margin'] > 5):
+                if (tag['margin'] > margin_list[tag['id']]):
+                    #Add the tag info to the detection list
+                    pruned_detection_list.append(tag)
+                    margin_list[tag['id']] = tag['margin']
+        #Replace the old detection tuple with the new modified detection list
+        detections = tuple(pruned_detection_list)
+        
+        #If the detections are under 4
+        if (len(detections) < 4):
+                #print("Missing an apriltag")
+                #print("Apriltags found: " + str(len(detections)))
+                #print(detections)
+                ##Set the window to be able to be resized
+                #cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+                ##Resize the window
+                #if pi:
+                    #cv2.resizeWindow("Input Image", 200, 200)
+                #else:
+                    #cv2.resizeWindow("Input Image", 700, 700)
+                ##Show the image
+                #cv2.imshow("Input Image", image)
+                ##Wait for a keypress
+                #cv2.waitKey(1)
+                #Return empty list
+                return []
+        #If there are extra apriltags detected with duplicate ids
+        elif (len(detections) > 4):
+            #print("Detected Extra Apriltag")
+            #Sort the detection list by descending confidence in tag detection
+            pruned_detection_list.sort(reverse=True, key=return_tag_margin)
+            #Remove the lowest confidence tags until only 4 are left
+            for i in range(len(detections) - 4):
+                #Remove the last value in the sorted list
+                pruned_detection_list.pop()
+            #Sort the list by tag id to return it to the original order
+            pruned_detection_list.sort(key=return_tag_id)
+            #Replace the previous detection tuple by the modified one
+            detections = tuple(pruned_detection_list)
+    elif (any(map(lambda ele: ele is None, detections))):
+        print("Lost some stuff")
     
     #Return variable with detected apriltag info
     return detections
 
-def parse_april_tag_coordinate(detections, tag_id, corner ='center'):
+def return_tag_info(detections, tag_id, info='center'):
     '''
     Function to easily parse the apriltag detection array
     Takes in the detection array, the desired tag to get info for, as well as the desired vertex to get the coordinates for
     '''
-    #If the corner variable isn't there or is 'center'
-    if (corner == 'center'):
+    
+    index = None
+    for tag in range(len(detections)):
+        if (detections[tag]['id'] == tag_id):
+            index = tag
+            
+    if (index == None):
+        print("Error finding apriltag " + str(tag_id))
+        return None
+    
+    #If the info variable isn't there or is 'center'
+    if (info == 'center'):
         #Set x value of the center coordinate
-        x = detections[tag_id]['center'][0]
+        x = detections[index]['center'][0]
         #Set y value of the center coordinate
-        y = detections[tag_id]['center'][1]
+        y = detections[index]['center'][1]
+        #Output is the x and y coordinates in a tuple, rounded and cast to ints to the nearest pixel
+        output = (int(round(x)), int(round(y)))
+    #If the info variable is asking for hamming
+    elif (info == 'hamming'):
+        output = detections[index]['hamming']
+    #If the info variable is asking for hamming
+    elif (info == 'margin'):
+        output = detections[index]['margin']
+        #If the info variable is asking for hamming
+    elif (info == 'id'):
+        output = detections[index]['id']
     #Otherwise if the desired coordinate is not the center
     else:
-        #Dictionary for converting from text descriptions of the corners to the index of the corner coordinate in the apriltag array
+        #Dictionary for converting from text descriptions of the corners to the index of the info coordinate in the apriltag array
         corner_dict = { 'lb':0, 'rb':1, 'rt':2, 'lt':3 }
-        #Set x value of the corner coordinate
-        x = detections[tag_id]['lb-rb-rt-lt'][corner_dict[corner]][0]
-        #Set y value of the corner coordinate
-        y = detections[tag_id]['lb-rb-rt-lt'][corner_dict[corner]][1]
-    #Output is the x and y coordinates in a tuple, rounded and cast to ints to the nearest pixel
-    output = (int(round(x)), int(round(y)))
+        #Set x value of the info coordinate
+        x = detections[index]['lb-rb-rt-lt'][corner_dict[info]][0]
+        #Set y value of the info coordinate
+        y = detections[index]['lb-rb-rt-lt'][corner_dict[info]][1]
+        #Output is the x and y coordinates in a tuple, rounded and cast to ints to the nearest pixel
+        output = (int(round(x)), int(round(y)))
     return output
 
 def grab_inside_corners(detections):
     '''
     Function for returning the inner coordinates of the apriltags on the chessboard
-    Takes the detection array in as an input, and uses the parse_april_tag_coordinate function to get the corner coordinates of each tag
+    Takes the detection array in as an input, and uses the return_tag_info function to get the corner coordinates of each tag
     Returns each corner in a 4 element list
     '''
-    lt = parse_april_tag_coordinate(detections, 0, 'rb')
-    rt = parse_april_tag_coordinate(detections, 1, 'lb')
-    rb = parse_april_tag_coordinate(detections, 3, 'lt')
-    lb = parse_april_tag_coordinate(detections, 2, 'rt')
-    return lb, rb, rt, lt
+    lt = return_tag_info(detections, 0, 'rb')
+    rt = return_tag_info(detections, 1, 'lb')
+    rb = return_tag_info(detections, 3, 'lt')
+    lb = return_tag_info(detections, 2, 'rt')
+    return lt, rt, lb, rb
 
 def grab_outside_corners(detections):
     '''
     Function for returning the inner coordinates of the apriltags on the chessboard
-    Takes the detection array in as an input, and uses the parse_april_tag_coordinate function to get the corner coordinates of each tag
+    Takes the detection array in as an input, and uses the return_tag_info function to get the corner coordinates of each tag
     Returns each corner in a 4 element list
     '''
-    lt = parse_april_tag_coordinate(detections, 0, 'lt')
-    rt = parse_april_tag_coordinate(detections, 1, 'rt')
-    rb = parse_april_tag_coordinate(detections, 3, 'rb')
-    lb = parse_april_tag_coordinate(detections, 2, 'lb')
-    return lb, rb, rt, lt
+    lt = return_tag_info(detections, 0, 'lt')
+    rt = return_tag_info(detections, 1, 'rt')
+    rb = return_tag_info(detections, 3, 'rb')
+    lb = return_tag_info(detections, 2, 'lb')
+    return lt, rt, lb, rb
 
 def return_tag_margin(input_list):
     return input_list['margin']
@@ -124,7 +265,16 @@ def measure_distance(pt1, pt2):
     Uses pythagorean theorem to calculate distance
     Distance is returned as an int
     '''
-    return int(math.sqrt((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2))
+    return int(math.sqrt((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2)) 
+
+def measure_angle(pt1, pt2):
+    theta = abs(math.atan2(pt2[1] - pt1[1], pt2[0] - pt1[0]))
+    if (theta < 1.6) and (theta > 1.5):
+        return 1
+    elif (theta < 0.1) and (theta > 0):
+        return 0
+    else:
+        return "Trigger a type error in measure_angle"
 
 def circle_image(image, coordinates, color, ratio):
     '''
@@ -136,12 +286,14 @@ def circle_image(image, coordinates, color, ratio):
     #Color definition dictionary
     color_dict = {'blue':(255, 0, 0), 'green':(0, 255, 0), 'red':(0, 0, 255)}
     
-    # Line thickness of 2 px
+    #Fill entire circle
     thickness = -1
 
     #If the image is from a picture, use a large radius circle to make the circle more visible on a large picture
     if (ratio == 'picture'):
         radius = 12
+    elif (isinstance(ratio, int)):
+        radius = ratio
     #If the image is from a video, use a small radius circle so as to not take up too much space
     else:
         radius = 3
@@ -192,6 +344,26 @@ def show_images(*arg):
             #Diplay the image
             cv2.imshow(arg[i][0], arg[i][1])
 
+def get_hist(image):
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    
+    h_bins = 50
+    s_bins = 60
+    histSize = [h_bins, s_bins]
+    
+    # hue varies from 0 to 179, saturation from 0 to 255
+    h_ranges = [0, 180]
+    s_ranges = [0, 256]
+    ranges = h_ranges + s_ranges # concat lists
+
+    # Use the 0-th and 1-st channels
+    channels = [0, 1]
+    
+    hist = cv2.calcHist([hsv_image], channels, None, histSize, ranges, accumulate=False)
+    cv2.normalize(hist, hist, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+    
+    return hist
+
 #-----------------------------------------IMAGE DETECTION FUNCTIONS
 def perspective_shift(image, corners):
     '''
@@ -202,7 +374,7 @@ def perspective_shift(image, corners):
     '''
     #Measure the distance of each size of the chessboard and keep the maximum length
     distance = max(measure_distance(corners[0], corners[1]), measure_distance(corners[1], corners[2]), measure_distance(corners[2], corners[3]), measure_distance(corners[3], corners[0]))
-        
+    
     #Convert the input corner coordinates to float
     pts1 = np.float32(corners)
     #Set the size of the output image to be the maximum chess side length of pixels from the input image and convert to float
@@ -215,30 +387,46 @@ def perspective_shift(image, corners):
     
     return shifted_image
 
-def get_detection_array(image, turn_background):
+def get_detection_color_array(image, turn_background, first_frame=False):
+    global edge_count_threshold
     '''
     Function to detect pieces on a chessboard
     Takes in an image of just the chessboard, perspective shifted, and the amount of pieces on the board in the previous frame to help with thresholding
     Returns the input image with each square replaced with its edge detection array and color coded squares showing which squares are deemed to have pieces in them
     The rectangles used for edge detection are the inside parts of the squares of the chessboard
     Each square was made to be 10 x 10 pixels before being scaled up, 10% of the square width is taken off when calculating corner coordinates, so the measured rectangle ends up being the inside 8 x 8 of the square
-    A red rectange means a piece was detected, a green rectangle means the square is empty
+    A white rectange means a piece was detected, a black rectangle means the square is empty
     '''
+    
+    add_text_to_image = True
+    
     #Make a copy of the input image to modify to show detection
-    detected_image = copy.copy(image)
+    detection_image = copy.copy(image)
+    color_image = cv2.cvtColor(copy.copy(image), cv2.COLOR_BGR2HSV)
+    color_image = np.stack((color_image[:,:,0],) * 3, axis=-1)
             
     #Rectangle color for empty squares
-    empty_color = (0, 255, 0)
+    empty_color = (0, 0, 0)
     #Rectangle color for filled squares
-    occupied_color = (0, 0, 255)
-    #Set thickness of the rectangle lines
+    occupied_color = (255, 255, 255)
+    
     if pi:
-        thickness = 1
+        #Size of text to add to image
+        text_size = 0.25
+        #Thickness of text to add to image
+        text_thickness = 1
+        #Thickness of lines to draw on image
+        line_thickness = 4
     else:
-        thickness = 6
+        #Size of text to add to image
+        text_size = 1.5
+        #Thickness of text to add to image
+        text_thickness = 4
+        #Thickness of lines to draw on image
+        line_thickness = 6
     
     #Size of the input image, assumed to be a square because the input image should be perspective shifted
-    size = detected_image.shape[0]
+    size = detection_image.shape[0]
     #Calculate the size of a pixel on the paper (NOT an actual pixel, the pixel here refers to creating the chessboard)
     #The apriltag is separated from the chessboard by one pixel, each square of the chessboard is 10 pixels wide, meaning 82 pixels for the width/height of the input image
     pixel = size / 82
@@ -249,52 +437,146 @@ def get_detection_array(image, turn_background):
     edge_count = np.zeros((8, 8), dtype=int)
     #Initialize array for storing the determination for whether each square is occupied
     detection_array = np.zeros((8, 8), dtype=int)
+    #Initialize array for storing the color of each piece
+    color_array = np.zeros((8, 8), dtype=int)
+    
+    if first_frame:
+        #Initialize list to store the amount of edges detected in each occupied square
+        occupied_edge_count = [0] * 32
     
     #Iterate through each rank of the chessboard
     for y in range(8):
         #Iterate through each file of the chessboard
         for x in range(8):
             #Calculate the coordinates of the upper left corner of the rectangle to be measured
-            start_point = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
+            lt = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
             #Calculate the coordinates of the lower right corner off the rectange to be measured
-            end_point = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
+            rb = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
             
-            #Perform edge detection on the rectangle, replacing the relevant part of the input image with the edge detection array, and storing the edge cound in the edge_count array
-            detected_image[start_point[1]:end_point[1], start_point[0]:end_point[0]], edge_count[y][x] = edge_detection(detected_image[start_point[1]:end_point[1], start_point[0]:end_point[0]])            
+            #Crop out only the current square for analysis
+            square = detection_image[lt[1]:rb[1], lt[0]:rb[0]]
             
-            #If the edge count of the square exceeds 50000 the square is deemed occupied
-            if (edge_count[y][x] > 50000):
+            #Perform edge detection on the square, replacing the relevant part of the input image with the edge detection array, storing the edge count in the edge_count array, and taking in the center of mass of the detected edges as well as the standard deviation of points
+            detection_image[lt[1]:rb[1], lt[0]:rb[0]], edge_count[y][x], x_average, y_average, std = piece_detection(square)            
+            
+            #If this is the first frame, all squares in the 0th, 1st, 6th, and 7th are known to be occupied
+            if first_frame and ((y == 0) or (y == 1) or (y == 6) or (y == 7)):
+                #Save edge count to use in setting the edge_count_threshold
+                occupied_edge_count[(y % 4) * 8 + x] = edge_count[y][x]
+                #If the edge_count is below the current edge_count_threshold, raise the edge_count to be above the threshold so it starts as a occupied square
+                if (edge_count[y][x] <= edge_count_threshold):
+                    edge_count[y][x] = edge_count_threshold + 1
+            
+            #If the edge count of the square exceeds edge_count_threshold the square is deemed occupied
+            if (edge_count[y][x] > edge_count_threshold):
                 #Add a rectangle of the appropriate color to the output image
-                detected_image = cv2.rectangle(detected_image, start_point, end_point, occupied_color, thickness)
+                detection_image = cv2.rectangle(detection_image, lt, rb, occupied_color, line_thickness)
                 #Mark the square as occupied in the output array
                 detection_array[y][x] = 1
-            #If the edge cound of the square is or is under 50000, then the square is empty
+                #Measure the average color of the piece
+                color_image[lt[1]:rb[1], lt[0]:rb[0]], color_array[y][x] = average_color(color_image[lt[1]:rb[1], lt[0]:rb[0]], x_average, y_average, std)
+                cv2.putText(color_image, str(color_array[y][x]), (int(lt[0]), int(lt[1] + pixel*0)), cv2.FONT_HERSHEY_COMPLEX, text_size, (255, 255, 255), text_thickness)
+            #If the edge cound of the square is or is under edge_count_threshold, then the square is empty
             else:
                 #Add a rectangle of the appropriate color to the output image
-                detected_image = cv2.rectangle(detected_image, start_point, end_point, empty_color, thickness)
+                detection_image = cv2.rectangle(detection_image, lt, rb, empty_color, line_thickness)
                 #Mark the square as occupied in the output array
                 detection_array[y][x] = 0
+
+    if first_frame:
+        #Set new edge_count_threshold to be slightly smaller than the lowest edge count of an occupied square
+        edge_count_threshold = int(min(occupied_edge_count) * 0.5)
     
     if (np.count_nonzero(detection_array) > (turn_background[0] + turn_background[1]) or np.count_nonzero(detection_array) < (turn_background[0] + turn_background[1] - 1)):
         print("Error detecting number of pieces on board")
+        print("Counted " + str(np.count_nonzero(detection_array)) + " pieces")
+        print("Expected " + str(turn_background[0] + turn_background[1]) + " or " + str((turn_background[0] + turn_background[1]) - 1) + " pieces")
+        print("Edge count threshold is " + str(edge_count_threshold))
+        print(detection_array)
+        print(edge_count)
+        show_images('resize', ("Piece Detection", detection_image))
+        cv2.waitKey(1)
+        
+        #Maybe change the threshold here?
+    
+    #If one less piece is on the board in the current frame than the sum of pieces expected from both sides of the board
+    if (np.count_nonzero(detection_array) + 1 == turn_background[0] + turn_background[1]):
+        #Subtract one piece from whichever side didn't just move
+        turn_background[turn_background[2]] -= 1
+        show_images("resize", ("Subtracting a piece from" + str(turn_background[2]), image))
+        cv2.waitKey(0)
+
+    #Flatten the color array to a 1D array to bbe able to sort it
+    raveled_color_array = np.ravel(color_array)
+    #Sort the nonzero values of the flattened color array
+    color_array_sorted = np.sort(raveled_color_array[np.flatnonzero(color_array)])
+    
+    #Dictionary for what to display on each square of the output image depending on its color_array value
+    #color_ref = {0:"Empty", 1:"Black", 2:"White"}
+    color_ref = {0:("Empty", (255, 255, 255)), 1:("Black", (150, 150, 150)), 2:("White", (255, 255, 255))}
+    
+    #Iterate through each rank (horizontal row)
+    for y in range(8):
+        #Iterate through each file (vertical column)
+        for x in range(8):
+            #If the current square is occupied
+            if (color_array[y][x] > 0):
+                #If the average color of the current piece is in the bottom x number of average piece colors on the board, label it as white
+                #x is gotten from the turn_background list, where turn_background[0] tells the number of white pieces expected on the board
+                #turn_background is updated above based on when the detection array shows a piece disappeared
+                if (color_array[y][x] in color_array_sorted[:turn_background[0]]):
+                    #Label the current square as having a white piece
+                    color_array[y][x] = 2
+                #If the current piece color isn't determined to be white, label it black
+                else:
+                    #Label it black
+                    color_array[y][x] = 1
+                if add_text_to_image:
+                    #Calculate the coordinates of the upper left corner of the rectangle to be measured
+                    lt = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
+                    #Label the current square with the determination of whether it is empty, or what color piece it has
+                    #Add a rectangle of the appropriate color to the output image
+                    #color_image = cv2.rectangle(color_image, lt, rb, color_ref[color_array[y][x]], int(pixel)*2)
+                    cv2.putText(color_image, color_ref[color_array[y][x]][0], (int(lt[0]), int(lt[1] + pixel*7)), cv2.FONT_HERSHEY_COMPLEX, text_size, color_ref[color_array[y][x]][1], text_thickness)
     
     #print(edge_count)
     #print(detection_array)
-    return detected_image, detection_array
+    #print(color_array)
+    return detection_image, detection_array, color_image, color_array
 
-def edge_detection(image):
+def piece_detection(image):
     '''
-    Function to perform edge detection on an image, and return the array of edges and how many edge were measured
+    Function to perform edge detection on an image, and return the array of edges and how many edge were measured, as well as the center of mass of the edges and the standard deviation of the edges
     Takes in the image to measure, and outputs the measured image and the number of edges
     '''
     #Blur the image to get rid of noise and bad edge measurements
-    blurred = cv2.medianBlur(image,3)
+    blurred = cv2.medianBlur(image,7)
     #Perform edge measurement
     edges = cv2.Canny(blurred,80,100)
+    
+    #If there are edges
+    if np.count_nonzero(edges):
+        #Find average y location of edges
+        y_average = int(round(np.mean(np.nonzero(edges)[0])))
+        #Find average x location of edges
+        x_average = int(round(np.mean(np.nonzero(edges)[1])))
+        #Find standard deviation of edges in y direction
+        y_std = int(round(np.std(np.nonzero(edges)[0])))
+        #Find standard deviation of edges in x direction
+        x_std = int(round(np.std(np.nonzero(edges)[1])))
+        #Average standard deviation values to get circle radius
+        std = int(round(1.35 * (y_std + x_std) / 2))
+    #If there are no edges
+    else:
+        #Set all statistics values to 0
+        y_average, x_average, std = 0, 0, 0
+        
     #Copy edge detection image 3 times so it can replace a section of a 3 channel image
     edges = np.stack((edges,)*3, axis=-1)
-    
-    return edges, np.sum(edges)
+    #Find total amount of edges
+    edge_count = np.sum(edges)
+        
+    return edges, edge_count, x_average, y_average, std
 
 def get_color_array(image, detection_array, turn_background):
     '''
@@ -459,101 +741,210 @@ def get_color_array(image, detection_array, turn_background):
                 cv2.putText(gray, color_ref[color_array[y][x]], (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
     return gray, color_array.astype(np.int64)
 
-def average_color(image):
+def average_color(image, x, y, radius):
     '''
-    Function to average the color of a grayscale image to 4 decimal points
-    Takes in a grayscale image and returns an average of the nonzero elements
+    Function to average the hue of a hsv image
+    Takes in a hsv image and returns an average of the nonzero hues inside a given circle
     '''
-    return round(np.average(image[np.nonzero(image)]), 4)
+    #Create an empty mask the size of the input image
+    mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
+    #Place a white circle on the mask with the given dimensions
+    cv2.circle(mask, (x, y), radius, (255, 255, 255), -1)
+    #Create a new image called color_measure by only keeping the hue pixels that intersect with the white circle on the mask
+    color_measure = np.stack((image[:,:,0]*mask,) * 3, axis=-1)
+    #Measure average color from nonzero pixels
+    color = round(np.average(color_measure[np.nonzero(mask)]))
+    
+    return color_measure, color
 
+def focus_on_border(image, detections):
+    '''
+    Function to black out apriltags and inside of chessboard
+    Takes the image to black out, and the apriltag detections
+    Returns the blacked out image
+    '''
+    #Retrieve inside corners
+    inside_corners = grab_inside_corners(detections)
+    #Retrieve outside corners
+    outside_corners = grab_outside_corners(detections)
+    
+    #Make an empty array the size of the input image to run through a perspective shift
+    inside_corner_array = np.zeros(shape=[image.shape[0], image.shape[1]], dtype=np.uint8)
+    #Add in white pixels at each 4 inside corners
+    for corner in inside_corners:
+        inside_corner_array[corner[1]][corner[0]] = 255
+    
+    #Shift image with colored inside corners
+    shifted_inside_corner = perspective_shift(inside_corner_array, outside_corners)
+    
+    #Get the locations of each nonzero pixels in the shifted image
+    points = np.nonzero(shifted_inside_corner)
+    
+    #Make an empty array to store nonzero points in
+    corners = [0] * len(points[0])
+    
+    #For each nonzero pixel
+    for i in range(len(points[0])):
+        #Add the coordinates to the corners array
+        corners[i] = [points[0][i], points[1][i]]
+    
+    #Use K mean classification to find the centers of the 4 clusters at each corner
+    kmeans = KMeans(n_clusters=4, random_state=0).fit(corners)
+    
+    #Map the cluster centers to two lists of the x and y coordinates, each list is a masked array
+    x_list, y_list = map(np.ma.array, zip(*kmeans.cluster_centers_))
+    
+    #Get the indicies of each corners coordinate in x_list and y_list
+    #The top left corner will have the lowest summed coordinates since the origin is in the top left corner
+    top_left = np.argmin(x_list + y_list)
+    #Mask the top left coordinate so it isn't considered for a different corner
+    x_list[top_left] = np.ma.masked
+    #The bottom right corner will have the highest summed coordinates since it's furthest from the origin
+    bottom_right = np.nanargmax(x_list + y_list)
+    #The bottom left corner will be the one with the lowest remaining x coordinate (since top left is masked and not considered)
+    bottom_left = np.nanargmin(x_list)
+    #The top right corner is the last remaining corner
+    top_right = 6 - top_left - bottom_right - bottom_left
+    
+    #Remove the mask from the x coordinate list to make the top left value usable
+    x_list.mask = np.ma.nomask
+            
+    #Convert the four indicies into integer coordinates of each corner
+    top_left = (int(x_list[top_left]), int(y_list[top_left]))
+    bottom_right = (int(x_list[bottom_right]), int(y_list[bottom_right]))
+    bottom_left = (int(x_list[bottom_left]), int(y_list[bottom_left]))
+    top_right = (int(x_list[top_right]), int(y_list[top_right]))
+    
+    #Black out inside chessboard area
+    image[top_left[1]:bottom_left[1], top_left[0]:top_right[0]] = 0
+    #Black out corners where apriltags are
+    #Top left
+    image[0:top_left[1]+5, 0:top_left[1]+5] = 0
+    #Top right
+    image[0:top_right[1]+5, top_right[0]-5:image.shape[1]] = 0
+    #Bottom left
+    image[bottom_left[1]-5:image.shape[0], 0:bottom_left[0]+5] = 0
+    #Bottom right
+    image[bottom_right[1]-5:image.shape[0], bottom_right[0]-5:image.shape[1]] = 0
+    
+    return image
+
+def knot_detection(image, detections):
+    '''
+    Function to observe linear celtic knot pattern around border of chessboard and check whether any part of the pattern isn't visible
+    Takes in the image to check and location of apriltags in the image
+    Returns true if the image isn't blocked, false if it is blocked
+    '''
+    global border_template
+    #Whether to display the output
+    display = True
+    
+    #Convert copy of the reference image to grayscale
+    template = cv2.cvtColor(copy.copy(border_template), cv2.COLOR_BGR2GRAY)
+    
+    #Retrive outside corners of the apriltags
+    outside_corners = grab_outside_corners(detections)
+    
+    #If all the outside corners were found
+    if not any(map(lambda ele: ele is None, outside_corners)):
+        #Crop and perspective shift image using the outside corners of the apriltags
+        image = perspective_shift(image, outside_corners)
+
+        #Blur the image to get rid of noise and bad edge measurements
+        blurred = cv2.medianBlur(image,3)
+        #Perform edge measurement
+        edges = cv2.Canny(blurred,80,100)
+
+        #Black out the apriltags and the inside chessboard area, leaving only the knot pattern
+        edges = focus_on_border(edges, detections)
+        
+        #Get input image size
+        w = image.shape[0]
+        h = image.shape[1]
+        
+        #The reference images had a border around the apriltag, the apriltag detection from the camera doesn't leave any border, the offset is how many pixels to cut off from the edges
+        offset = 24 #Math says this value should be 34, but there might be some camera distortion that makes 24 work better
+        #Crop the border around the edges of the reference image and resize it to the same size of the input image
+        template = cv2.resize(template[offset:3300-offset, offset:3300-offset], (w, h))
+        #Boost any nonzero template value to 255 since resizing lowers some edge values
+        template = cv2.inRange(template, 1, 255)
+        
+        #Keep only the edges that fall inside the template
+        edges = template - cv2.inRange(template - edges, 127, 255)        
+        
+        #Size of the square to use in blurring, large = more blurred
+        ksize = (60, 60)
+        #Blur edges to expand how much space is taken up by the edge lines
+        edges_blurred = cv2.blur(edges, ksize)
+        #Boost any nonzero edge values to 255
+        edges_blurred = cv2.inRange(edges_blurred, 1, 255)
+        
+        #Subtract blurred edges from template, any remaining nonzero pixels are pixels that were blocked from camera view
+        blocked_edges = cv2.inRange(template - edges_blurred, 127, 255)
+        
+        #Stack the blocked edges, edges, and blurred edges to all display in the same image
+        output = np.stack((template // 4, edges_blurred // 4, blocked_edges // 2), axis=-1)
+        
+        if display:
+            #Set the window to be able to be resized
+            cv2.namedWindow("Edges", cv2.WINDOW_NORMAL)
+            #Resize the window
+            if pi:
+                cv2.resizeWindow("Edges", 200, 200)
+            else:
+                cv2.resizeWindow("Edges", 700,700)
+            #Show calculated results over the image
+            cv2.imshow("Edges", image // 2 + output)
+            #Wait for keypress
+            cv2.waitKey(1)
+        
+        #If there were no blocked edges return true
+        if not np.count_nonzero(blocked_edges):
+            return True
+        #Else return false
+        else:
+            return False
+    #If there was an apriltag corner missing, return false
+    else:
+        return False
+    
 #-----------------------------------------IMAGE DETECTION MAIN FUNCTION
-def process_frame(frame, turn_background):
-    #If frame is taller than it is wide
-    if (frame.shape[0] > frame.shape[1]):
-        #Make a copy of frame in case cropping it doesn't work
-        input_frame = frame
-        #Create a square that is as wide as the photo and in the middle of the frame
-        start_point = (0, (frame.shape[0] - frame.shape[1])//2)
-        end_point = (frame.shape[1], (frame.shape[0] - frame.shape[1])//2 + frame.shape[1])
-        #Crop the frame to just the middle square
-        frame = frame[start_point[1]:end_point[1], start_point[0]:end_point[0]]
-    
-    #Run apriltag detection on image
-    detections = detect_apriltags(tag_family, frame)
-    
-    #If not all 4 apriltags are detected
-    if (len(detections) != 4) and (input_frame.shape[0] > input_frame.shape[1]):
-        print("Rerunning detection on entire image")
-        #Revert back to the original frame
-        frame = input_frame
-        #Run apriltag detection again
+def process_frame(frame, turn_background, first_frame, previous_detections=False):
+    valid_frame = True
+        
+    if first_frame:
+        #Run apriltag detection on whole image
         detections = detect_apriltags(tag_family, frame)
+    else:
+        #Run apriltag detection, focusing on the area where the tags were last seen
+        detections = detect_apriltags(tag_family, frame, previous_detections)
     
     #Make copies of original image to keep the same for display 
     apriltagCorners, shifted, color_detection, piece_detection = copy_image(frame, 4)            
-    
-    #If the detections are still under 4
-    if (len(detections) < 4):
-            print("Missing an apriltag")
-            print("Apriltags found: " + str(len(detections)))
-            print(detections)
-            #Set the window to be able to be resized
-            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-            #Resize the window
-            if pi:
-                cv2.resizeWindow("Input Image", 200, 200)
-            else:
-                cv2.resizeWindow("Input Image", 700, 700)
-            #Show the image
-            cv2.imshow("Input Image", frame)
-            #Wait for a keypress
-            cv2.waitKey(0)
-    #If there are extra apriltags detected
-    elif (len(detections) > 4):
-        #Make a copy of the detection tuple as a list for easier sorting and deleting
-        detection_list = list(detections)
-        #Sort the detection list by descending confidence in the tag detection
-        detection_list.sort(reverse=True, key=return_tag_margin)
-        #For all the detected tags over 4
-        for i in range(len(detections) - 4):
-            #Remove the last value
-            detection_list.pop()
-        #Sort the list by tag id to return it to the original order
-        detection_list.sort(key=return_tag_id)
-        #Replace the previous detection tuple by the modified one
-        detections = tuple(detection_list)
 
     #If 4 apriltags are seen (one in each 4 corners of chessboard), crop image and run detection functions
-    if(len(detections) == 4):
-        #Get values for the inside corners of each 4 apriltags
-        lb, rb, rt, lt = grab_inside_corners(detections)
-        
-        #Get values for the outside corners of each 4 apriltags
-        out_lb, out_rb, out_rt, out_lt = grab_outside_corners(detections)
-        
+    if detections and valid_frame:        
         #Place circles on inside corners of each apriltag
-        circle_image(apriltagCorners, (lt, rt, rb, lb), 'red', 'picture')
-        
-        #Shift perspective to make to make the inside corners of the apriltags the corners of the image
-        shifted = perspective_shift(shifted, (lt, rt, lb, rb))
-        
-        #Go through each square of the chessboard to tell if square is populated with piece
-        piece_detection, detection_array = get_detection_array(shifted, turn_background)
-        
-        #If one less piece is on the board in the current frame than the sum of pieces expected from both sides of the board
-        if (np.count_nonzero(detection_array) + 1 == turn_background[0] + turn_background[1]):
-            #Subtract one piece from whichever side didn't just move
-            turn_background[turn_background[2]] -= 1
-        
-        if (np.sum(detection_array) != 0):
-            #Get the color detection image and color detection array
-            color_detection, color_array = get_color_array(shifted, detection_array, turn_background)
-        else:
-            #Send minor error message and create a blank color array
-            print("No pieces detected to read color from")
+        #circle_image(apriltagCorners, grab_inside_corners(detections), 'red', 'picture')
+        #show_images('resize', ('Apriltag Corners', apriltagCorners))
+        #cv2.waitKey(0)
+                
+        if not knot_detection(frame, detections):
+            #print("Gold border not clear")
+            valid_frame = False
             color_array = np.zeros((8, 8), dtype=int)
+        else:            
+            #Shift perspective to make to make the inside corners of the apriltags the corners of the image
+            shifted = perspective_shift(shifted, grab_inside_corners(detections))
+            
+            #Go through each square of the chessboard to tell if square is populated with piece and measure piece color
+            piece_detection, detection_array, color_detection, color_array = get_detection_color_array(shifted, turn_background, first_frame)
+    #If not all four apriltags are visisble
+    else:
+        valid_frame = False
+        color_array = np.zeros((8, 8), dtype=int)
     
-    return color_array, piece_detection, color_detection
+    return valid_frame, detections, color_array, piece_detection, color_detection
 
 #-----------------------------------------CHESS MOVE FUNCTIONS
 def create_board_array():
@@ -895,8 +1286,52 @@ def print_board(window, board_array, square_size):
     #Display the window
     pygame.display.flip()
 
+#-----------------------------------------CHESS FUNCTIONS
+def open_engine(difficulty):
+    if pi:
+        #List of engine to use and their rankings
+        engines = [[968, "feeks-master/main.py"], [1198, "belofte64-2.1.1"], [3717, "stockfish_13_linux_x64"]]
+        #Sort engines by rating
+        engines.sort(key = lambda engines: engines[0]) 
+        #Sort to get closest ranking to the desired difficulty
+        engine_to_use = min([(engines[i][0], engines[i][1], i) for i in range(len(engines))], key = lambda x: abs(x[0]-difficulty))
+        print("Using engine " + engine_to_use[1] + " with a rating of " + str(engine_to_use[0]))
+        #Open engine
+        engine = chess.engine.SimpleEngine.popen_uci("/home/pi/Chessboard/Engines/" + engine_to_use[1])
+    else:
+        #List of engine to use and their rankings
+        engines = [[968, "feeks-master/main.py"], [1198, "belofte64-2.1.1"], [3717, "stockfish_13_linux_x64"]]
+        #Sort engines by rating
+        engines.sort(key = lambda engines: engines[0]) 
+        #Sort to get closest ranking to the desired difficulty
+        engine_to_use = min([(engines[i][0], engines[i][1], i) for i in range(len(engines))], key = lambda x: abs(x[0]-difficulty))
+        print("Using engine " + engine_to_use[1] + " with a rating of " + str(engine_to_use[0]))
+        #Open engine
+        engine = chess.engine.SimpleEngine.popen_uci("/home/blemay360/Documents/chessboard-main/Engines/" + engine_to_use[1])
+    return engine
+
+#-----------------------------------------PI FUNCTIONS
+def setup_camera():
+    #Initialize the camera and grab a reference to the raw camera capture
+    camera = PiCamera()
+    #Set resolution
+    camera.resolution = (1024, 768)
+    return camera
+
+def pi_take_image(camera):
+    #Get raw capture from camera
+    #For some reason this works better calling this line everytime
+    rawCapture = PiRGBArray(camera)
+    #Allow the camera to warmup
+    time.sleep(0.1)
+    #Grab an image from the camera
+    camera.capture(rawCapture, format="bgr")
+    input_image = rawCapture.array
+    return input_image
+    
 #-----------------------------------------MAIN FUNCTION
 def main():
+    global engine
     #Create a gui to display the state of the chessboard, saving the window it creates and the size of each square in the chessboard for later functions
     window, square_size = create_gui()
 
@@ -909,43 +1344,45 @@ def main():
     #Print the chessboard to the window
     print_board(window, board_array, square_size)
     
+    #Set desired difficulty of the computer
+    #If playing computer, use desired difficulty
+    if vs_comp:
+        difficulty = 900
+    #Otherwise use the max rated engine for best suggestions
+    else:
+        difficulty = 3000
+     
+    #Find and open the desired engine for the difficulty
+    engine = open_engine(difficulty)
+    
     #Initialize a variable to keep track of how many white and black pieces are on the board, and which side just moved
     turn_background = [16, 16, 0]
     #[# of white pieces on board, # of black pieces on board, 0=black just moved | 1=white just moved]
     
     if pi:
-        #Initialize the camera and grab a reference to the raw camera capture
-        camera = PiCamera()
-        camera.resolution = (1024, 768)
-        rawCapture = PiRGBArray(camera)
-        #Allow the camera to warmup
-        time.sleep(0.1)
-        #Grab an image from the camera
-        camera.capture(rawCapture, format="bgr")
-        input_image = rawCapture.array
+        #Set up camera
+        camera = setup_camera()
+        #Take an image from the camera
+        input_image = pi_take_image(camera)
+        #Rotate image 180 degrees to correct for camera flip
+        #input_image = imutils.rotate(input_image, 180)
     else:
         #Read the first frame in
-        #input_image = cv2.imread('TestingImages/StandardSeries/1.jpg')
-        input_image = cv2.imread('TestingImages/LargeBoard/1.jpg')
+        input_image = cv2.imread(image_directory + '1.jpg')
+        #input_image = cv2.imread(image_directory + 'medium_block.jpg')
         
     if display_input:
-            #Set the window to be able to be resized
-            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-            #Resize the window
-            if pi:
-                cv2.resizeWindow("Input Image", 200,200)
-            else:
-                cv2.resizeWindow("Input Image", 700,700)
-            #Show the image
-            cv2.imshow("Input Image", input_image)
+            #Show the input image
+            show_images('resize', ("Input Image", input_image))
             #Pause until user presses a key
             cv2.waitKey(10)
-    
+        
     #Save the color array as old to compare with the second frame later
-    old_color_array, piece_detection, gray = process_frame(input_image, turn_background)
-    #Show the grayscale color detection image and piece detection image
-    show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
+    valid_frame, previous_detections, old_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, True)
     
+    #Show the grayscale color detection image and piece detection image
+    show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
+        
     if wait:
         #Wait for a keypress while updating the chessboard gui
         while (cv2.waitKey(100) == -1):
@@ -954,62 +1391,98 @@ def main():
         #Don't wait for a keypress
         cv2.waitKey(1)
 
-    run = False
+    if not valid_frame:
+        print("Couldn't validate first frame")
+        show_images('resize', ("Input Image", input_image))
+        cv2.waitKey(0)
+        end_program()
+        quit()
 
+    #-----------------------------------------LOOP
+    run = True
     counter = 2
+    right_move = 1
     while run:
         #Start a timer to measure processing time for the current frame
         start = time.time()
         #Update the variable of which side just went
         turn_background[2] = 1 - (counter % 2)
         
+        #If the wrong move was made for a computer match, wait here for user to correct before reading in a frame
+        if vs_comp and wait:
+            cv2.waitKey(right_move)
+        
         #Read the current frame
         if pi:
-            rawCapture = PiRGBArray(camera)
-            # allow the camera to warmup
-            time.sleep(0.1)
-            camera.capture(rawCapture, format="bgr")
-            input_image = rawCapture.array
+            input_image = pi_take_image(camera)
+            #input_image = imutils.rotate(input_image, 180)
         else:
-            input_image = cv2.imread('TestingImages/StandardSeries/' + str(counter) + '.jpg')
+            input_image = cv2.imread(image_directory + str(counter) + '.jpg')
         
         #Process the current frame
-        new_color_array, piece_detection, gray = process_frame(input_image, turn_background)
+        valid_frame, previous_detections, new_color_array, piece_detection, color_detection = process_frame(input_image, turn_background, False, previous_detections)
         
+         #Show the grayscale color detection image and piece detection image for the current image
+        show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
+        cv2.waitKey(1)
+        
+        #If the frame isn't valid, restart from the beginning of the loop
+        if not valid_frame:
+            continue
+        
+        #Show the input image
         if display_input:
-            #Set the window to be able to be resized
-            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-            #Resize the window
-            if pi:
-                cv2.resizeWindow("Input Image", 200,200)
-            else:
-                cv2.resizeWindow("Input Image", 700,700)
-            #Show the image
-            cv2.imshow("Input Image", input_image)
+            show_images('resize', ("Input Image", input_image))
         
-        #Show the grayscale color detection image and piece detection image for the current image
-        show_images('resize', ('Color Values', gray), ('Piece Detection', piece_detection))
         #Compare the color detection array of the current image with the last image to deterime the move that was made
-        move = color_array_to_uci(old_color_array, new_color_array, board)
+        if not np.array_equal(old_color_array, new_color_array):
+            move = color_array_to_uci(old_color_array, new_color_array, board)
+        else:
+            continue
         
-        if not pi:
+        if (move == ['','']):
+            continue
+        else:
             #Compute the move variable using the chess library
             move = chess.Move.from_uci(move)
-            #If the move wasn't legal
-            if not (move in board.legal_moves):
-                #Print the move wasn't legal
-                print("Not legal")
-            #Update the board array to reflect the move that was just made
-            board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
-            #Push the move to the board
-            board.push(move)
-            #Update the chessboard gui
-            print_board(window, board_array, square_size)
-            #Replace the old color array with the current color array to prepare for the next frame
-            old_color_array = new_color_array
+        
+        #If it's time to check the computer's move was properly carried out
+        if vs_comp and (turn_background[2] == 0):
+            #If the move just made was the same one as the engine calculated
+            if (move == result.move):
+                print("Good job")
+                right_move = 1
+            #If the move wasn't the same as the engine's move
+            else:
+                print("Wrong move")
+                right_move = 0
+                continue
+        
+        #If the move wasn't legal
+        if not (move in board.legal_moves):
+            #Print the move wasn't legal
+            print("Not legal")
+            continue
+        
+        #Update the board array to reflect the move that was just made
+        board_array = update_board_array_uci(board, board_array, chess.Move.uci(move))
+        #Push the move to the board
+        board.push(move)
+        #Update the chessboard gui
+        print_board(window, board_array, square_size)
+        #Replace the old color array with the current color array to prepare for the next frame
+        old_color_array = new_color_array
         
         #Print the move that was made and the time it took to process the frame
-        print(move, time.time() - start)
+        #print(move, time.time() - start)
+        if board.is_check():
+            print("Check")
+        
+        if vs_comp and (turn_background[2] == 1):
+            result = engine.play(board, chess.engine.Limit(time=0.5))
+            print("Computer move: " + str(board.san(result.move)))
+            #board_array = update_board_array_uci(board, board_array, chess.Move.uci(result.move))
+            #board.push(result.move)
         
         if wait:
             #Wait for a keypress while updating the chessboard gui
@@ -1021,12 +1494,20 @@ def main():
         #Update counter to know we're on the next frame
         counter += 1
         
+        if not pi:
+            max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
+        else:
+            max_file_count = 0
+        
         #If it's running from images and finishes the last image
-        if (counter == 36) and not pi:
+        if (counter == max_file_count) and not pi:
             #Stop running the program
+            print("Reached end of files")
             run = False
     
-    #When all images have been processed, wait 2 seconds to allow the user to decompress before ending
-    time.sleep(2)
+    #Close engine
+    engine.quit()
+    #When all images have been processed, wait 1 second to allow the user to decompress before ending
+    time.sleep(1)
 
 main()
