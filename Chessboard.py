@@ -1371,7 +1371,7 @@ def main():
         input_image = pi_take_image(camera)
         #Rotate image 180 degrees to correct for camera flip
         #input_image = imutils.rotate(input_image, 180)
-        cv2.imwrite("TestingImages/LiveKnotTrials/1.jpg", input_image)
+        cv2.imwrite("TestingImages/Debugging/1.jpg", input_image)
     else:
         #Read the first frame in
         input_image = cv2.imread(image_directory + '1.jpg')
@@ -1423,7 +1423,7 @@ def main():
         if pi:
             input_image = pi_take_image(camera)
             #input_image = imutils.rotate(input_image, 180)
-            cv2.imwrite("TestingImages/LiveKnotTrials/" + str(counter) + ".jpg", input_image)
+            cv2.imwrite("TestingImages/Debugging/" + str(counter) + ".jpg", input_image)
         else:
             input_image = cv2.imread(image_directory + str(counter) + '.jpg')
         
