@@ -403,7 +403,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
     detection_image = copy.copy(image)
     color_image = cv2.cvtColor(copy.copy(image), cv2.COLOR_BGR2HSV)
     color_image = np.stack((color_image[:,:,0],) * 3, axis=-1)
-            
+     
     #Rectangle color for empty squares
     empty_color = (0, 0, 0)
     #Rectangle color for filled squares
@@ -474,6 +474,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
                 detection_array[y][x] = 1
                 #Measure the average color of the piece
                 color_image[lt[1]:rb[1], lt[0]:rb[0]], color_array[y][x] = average_color(color_image[lt[1]:rb[1], lt[0]:rb[0]], x_average, y_average, std)
+                #Add text to image to show the value of the color of that square
                 cv2.putText(color_image, str(color_array[y][x]), (int(lt[0]), int(lt[1] + pixel*0)), cv2.FONT_HERSHEY_COMPLEX, text_size, (255, 255, 255), text_thickness)
             #If the edge cound of the square is or is under edge_count_threshold, then the square is empty
             else:
@@ -498,11 +499,12 @@ def get_detection_color_array(image, turn_background, first_frame=False):
         
         #Maybe change the threshold here?
     
+    turn_dict = {0:"white", 1:"black"}
     #If one less piece is on the board in the current frame than the sum of pieces expected from both sides of the board
     if (np.count_nonzero(detection_array) + 1 == turn_background[0] + turn_background[1]):
         #Subtract one piece from whichever side didn't just move
         turn_background[turn_background[2]] -= 1
-        print("Subtracting a piece from" + str(turn_background[2]))
+        print("Subtracting a piece from " + turn_dict[turn_background[2]])
         #show_images("resize", ("Subtracting a piece from" + str(turn_background[2]), image))
         #cv2.waitKey(0)
 
@@ -579,6 +581,7 @@ def piece_detection(image):
     return edges, edge_count, x_average, y_average, std
 
 def average_color(image, x, y, radius):
+    #5 1s, 6 2s, 3 3s, 2 4s, 1 5, 0 6s, 1 7
     '''
     Function to average the hue of a hsv image
     Takes in a hsv image and returns an average of the nonzero hues inside a given circle
@@ -590,9 +593,13 @@ def average_color(image, x, y, radius):
     #Create a new image called color_measure by only keeping the hue pixels that intersect with the white circle on the mask
     color_measure = np.stack((image[:,:,0]*mask,) * 3, axis=-1)
     #Measure average color from nonzero pixels
-    color = round(np.average(color_measure[np.nonzero(mask)]))
+    average = round(np.average(color_measure[np.nonzero(mask)]))
+    #Find the minimum hue value of the piece, gold pieces generally have minimum values in the 100s, silver pieces have minimum values close to 0
+    minimum = min(np.ravel(color_measure[np.nonzero(mask)]))
+    #Add the lowest value of the array to the average in order to correct for glare
+    offset_average = average + minimum #This isn't the best way to fix getting the wrong colors, maybe look into standard deviation instead since silver pieces can have large standard deviations that cause the average value to be too high
     
-    return color_measure, color
+    return color_measure, average + minimum
 
 def focus_on_border(image, detections):
     '''
