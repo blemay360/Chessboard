@@ -1,6 +1,8 @@
 #Variables to change stuff on a high level
 #Whether to display the input image
 display_input = False
+#Whether to display any extra info windows
+display = False
 #Whether to wait for a keypress on each image or not
 wait = False
 #Whether to play against a computer
@@ -833,7 +835,7 @@ def knot_detection(image, border_template, detections):
     Returns true if the image isn't blocked, false if it is blocked
     '''
     #Whether to display the output
-    display = True
+    global display
     
     #Convert copy of the reference image to grayscale
     template = cv2.cvtColor(copy.copy(border_template), cv2.COLOR_BGR2GRAY)
@@ -869,7 +871,8 @@ def knot_detection(image, border_template, detections):
         edges = template - cv2.inRange(template - edges, 127, 255)        
         
         #Size of the square to use in blurring, large = more blurred
-        ksize = (60, 60)
+        blur_size = 30
+        ksize = (blur_size, blur_size)
         #Blur edges to expand how much space is taken up by the edge lines
         edges_blurred = cv2.blur(edges, ksize)
         #Boost any nonzero edge values to 255
@@ -891,6 +894,7 @@ def knot_detection(image, border_template, detections):
                 cv2.resizeWindow("Edges", 700,700)
             #Show calculated results over the image
             cv2.imshow("Edges", image // 2 + output)
+            #cv2.imshow("Edges", edges_blurred)
             #Wait for keypress
             cv2.waitKey(1)
         
@@ -981,7 +985,8 @@ def create_board_array():
     piece_dict = {'r':0, 'n':1, 'b':2, 'q':3, 'k':4, 'p':5, 'P':6, 'R':7, 'N':8, 'B':9, 'Q':10, 'K':11}
     #Dictionary for correct sizing of each icon
     #Found by printing out the rectangle of each icon after importing then dividing by two
-    size_dict = {'r':(17, 21), 'n':(17, 22), 'b':(17, 22), 'q':(21, 22), 'k':(20, 22), 'p':(17, 21), 'P':(17, 21), 'R':(17, 21), 'N':(17, 22), 'B':(17, 22), 'Q':(21, 22), 'K':(20, 22)}
+    #size_dict = {'r':(17, 21), 'n':(17, 22), 'b':(17, 22), 'q':(21, 22), 'k':(20, 22), 'p':(17, 21), 'P':(17, 21), 'R':(17, 21), 'N':(17, 22), 'B':(17, 22), 'Q':(21, 22), 'K':(20, 22)}
+    size_dict = {'r':(34, 42), 'n':(34, 44), 'b':(34, 44), 'q':(42, 44), 'k':(40, 44), 'p':(34, 42), 'P':(34, 42), 'R':(34, 42), 'N':(34, 44), 'B':(34, 44), 'Q':(42, 44), 'K':(40, 44)}
     
     #Get the starting position of a chessboard in fen format, then at each '/', yielding a list of 8 elements for each rank of the board
     position = chess.STARTING_BOARD_FEN.split('/')
@@ -1208,7 +1213,7 @@ def color_array_to_uci(old_array, new_array, board):
     return move
         
 #-----------------------------------------CHESS GUI FUNCTIONS
-def create_gui():
+def create_gui(square_size):
     '''
     Function to create the gui elements that are needed to display the chessboard
     No inputs are taken
@@ -1217,13 +1222,6 @@ def create_gui():
     #Initialize an instance of pygame
     pygame.init()
     
-    #The pi screen is smaller and needs different sizing
-    if pi:
-        #Set square size to 40 pixels
-        square_size = 40
-    else:
-        #Set square size to 70 pixels
-        square_size = 70
     #Set the size of the window to 8 squares by 8 squares
     window = pygame.display.set_mode((square_size * 8, square_size * 8))
     #Set the window name to Chessboard
@@ -1327,9 +1325,17 @@ def pi_take_image(camera):
     
 #-----------------------------------------MAIN FUNCTION
 def main():
-    global engine
-    #Create a gui to display the state of the chessboard, saving the window it creates and the size of each square in the chessboard for later functions
-    window, square_size = create_gui()
+    global engine, display
+    #The pi screen is smaller and needs different sizing
+    if pi:
+        #Set square size to 40 pixels
+        #square_size = 40
+        square_size = 80
+    else:
+        #Set square size to 70 pixels
+        square_size = 70
+    #Create a gui to display the state of the chessboard, saving the window it creates  for later functions
+    window, square_size = create_gui(square_size)
 
     #Create a board array to keep track of the images displayed on the gui chessboard
     board_array = create_board_array()
@@ -1365,6 +1371,7 @@ def main():
         input_image = pi_take_image(camera)
         #Rotate image 180 degrees to correct for camera flip
         #input_image = imutils.rotate(input_image, 180)
+        cv2.imwrite("TestingImages/LiveKnotTrials/1.jpg", input_image)
     else:
         #Read the first frame in
         input_image = cv2.imread(image_directory + '1.jpg')
@@ -1379,8 +1386,9 @@ def main():
     #Save the color array as old to compare with the second frame later
     valid_frame, previous_detections, old_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, True)
     
-    #Show the grayscale color detection image and piece detection image
-    show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
+    if display:
+        #Show the grayscale color detection image and piece detection image
+        show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
         
     if wait:
         #Wait for a keypress while updating the chessboard gui
@@ -1415,15 +1423,17 @@ def main():
         if pi:
             input_image = pi_take_image(camera)
             #input_image = imutils.rotate(input_image, 180)
+            cv2.imwrite("TestingImages/LiveKnotTrials/" + str(counter) + ".jpg", input_image)
         else:
             input_image = cv2.imread(image_directory + str(counter) + '.jpg')
         
         #Process the current frame
         valid_frame, previous_detections, new_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, False, previous_detections)
         
-         #Show the grayscale color detection image and piece detection image for the current image
-        show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
-        cv2.waitKey(1)
+        if display:
+            #Show the grayscale color detection image and piece detection image for the current image
+            show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
+            cv2.waitKey(1)
         
         #If the frame isn't valid, restart from the beginning of the loop
         if not valid_frame:
