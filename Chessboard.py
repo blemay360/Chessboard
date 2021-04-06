@@ -2,9 +2,9 @@
 #Whether to display the input image
 display_input = False
 #Whether to display any extra info windows
-display = True
+display = False
 #Whether to wait for a keypress on each image or not
-wait = True
+wait = False
 #Whether to play against a computer
 vs_comp = True
 #Which apriltags should be looked for
