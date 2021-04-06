@@ -2,9 +2,9 @@
 #Whether to display the input image
 display_input = False
 #Whether to display any extra info windows
-display = False
+display = True
 #Whether to wait for a keypress on each image or not
-wait = False
+wait = True
 #Whether to play against a computer
 vs_comp = True
 #Which apriltags should be looked for
@@ -13,7 +13,7 @@ tag_family = 'tag16h5'
 #Default edge_count_threshold, gets updated on first frame to better suit current conditions
 edge_count_threshold = 50000
 #File directory to get images from
-image_directory = 'TestingImages/KnotTesting/'
+image_directory = 'TestingImages/Debugging/'
 
 #Importing needed libraries
 import contextlib
@@ -418,7 +418,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
         line_thickness = 4
     else:
         #Size of text to add to image
-        text_size = 1.5
+        text_size = 0.75
         #Thickness of text to add to image
         text_thickness = 4
         #Thickness of lines to draw on image
@@ -430,7 +430,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
     #The apriltag is separated from the chessboard by one pixel, each square of the chessboard is 10 pixels wide, meaning 82 pixels for the width/height of the input image
     pixel = size / 82
     #Amount of space to move inwards from the corner of the square when setting up the region of interest
-    margin = 2
+    margin = 1
     
     #Initialize array for storing the edge count of each square of the chessboard
     edge_count = np.zeros((8, 8), dtype=int)
@@ -502,8 +502,9 @@ def get_detection_color_array(image, turn_background, first_frame=False):
     if (np.count_nonzero(detection_array) + 1 == turn_background[0] + turn_background[1]):
         #Subtract one piece from whichever side didn't just move
         turn_background[turn_background[2]] -= 1
-        show_images("resize", ("Subtracting a piece from" + str(turn_background[2]), image))
-        cv2.waitKey(0)
+        print("Subtracting a piece from" + str(turn_background[2]))
+        #show_images("resize", ("Subtracting a piece from" + str(turn_background[2]), image))
+        #cv2.waitKey(0)
 
     #Flatten the color array to a 1D array to bbe able to sort it
     raveled_color_array = np.ravel(color_array)
@@ -576,169 +577,6 @@ def piece_detection(image):
     edge_count = np.sum(edges)
         
     return edges, edge_count, x_average, y_average, std
-
-def get_color_array(image, detection_array, turn_background):
-    '''
-    Function to measure the color of each piece to tell whether it is black or white (or just light/dark in a grayscale image)
-    Takes in the image to measure from, the detection array that tells which squares to measure, and the turn background list to see how many pieces of each color it is looking for
-    The input image is assumed to be a square
-    Returns a color array with 0s where no piece is, 1s where black pieces are, and 2s where white pieces are
-    '''
-    #Whether to add text to the color detection image
-    add_text_to_image = True
-    #Convert a copy of in input image to a grayscale image
-    hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    gray = cv2.cvtColor(copy.copy(hsvImage), cv2.COLOR_BGR2GRAY)
-    #Get the side length of the input image, assumed to be a square
-    size = gray.shape[0]
-    #Calculate the size of a scaled up pixel from the chessboard (not the size of a pixel in the image)
-    pixel = size / 82
-    #Amount of space to move inwards from the corner of the square when setting up the region of interest
-    margin = 2
-    
-    if pi:
-        #Size of text to add to image
-        text_size = 0.25
-        #Thickness of text to add to image
-        text_thickness = 1
-        #Thickness of lines to draw on image
-        line_thickness = 1
-    else:
-        #Size of text to add to image
-        text_size = 1.5
-        #Thickness of text to add to image
-        text_thickness = 4
-        #Thickness of lines to draw on image
-        line_thickness = 6
-    
-    #Initialize an array to store the average color value for each square
-    color_array = np.zeros((8, 8), dtype=float)
-    
-    #Variable to store the average color of an empty white square for reference
-    white_square_ref = 0
-    #Variable to store the number of empty white squares
-    empty_white_count = 0
-    #Variable to store the average color of an empty black square for reference
-    black_square_ref = 0
-    #Variable to setore the number of empty black squares
-    empty_black_count = 0
-    
-    #Iterate through each rank (horizontal row)
-    for y in range(8):
-        #Iterate through each file (vertical column)
-        for x in range(8):
-            #If the current square is empty
-            if (detection_array[y][x] == 0):
-                #Calculate the coordinates of the upper left corner of the rectangle to be measured
-                start_point = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
-                #Calculate the coordinates of the lower right corner off the rectange to be measured
-                end_point = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
-                
-                #Take the average color in the rectangle
-                average = average_color(gray[start_point[1]:end_point[1], start_point[0]:end_point[0]])
-                
-                if add_text_to_image:
-                    #Display the average color in the current square
-                    cv2.putText(gray, str(round(average, 1)), (int(start_point[0]), int(start_point[1] + pixel*2.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
-                
-                #Draw a rectangle around the rectangle in which color is measured for this square
-                cv2.rectangle(gray, start_point, end_point, 255, line_thickness)
-                
-                #If the current square is white
-                if ((x + y) % 2 == 0):
-                    #Add the average color of the square to the running sum of white square colors
-                    white_square_ref += average
-                    #Increment the number of empty white squares found
-                    empty_white_count += 1
-                #If the current square is black
-                else:
-                    #Add the average color of the square to the running sum of white square colors
-                    black_square_ref += average
-                    #Add the average color of the square to the running sum of white square colors
-                    empty_black_count += 1
-    
-    #If there are no empty white squares
-    if (empty_white_count == 0):
-        #Default value if no white squares are empty
-        white_square_ref = 185
-    #If there are empty white squares
-    else:
-        #Compute averate color value for empty white squares
-        white_square_ref = white_square_ref / empty_white_count
-    #If there are no empty black squares
-    if (empty_black_count == 0):
-        #Default value if no black squares are empty
-        black_square_ref = 105
-    #If there are empty black squares
-    else:
-        #Compute average color value for empty black squares
-        black_square_ref = black_square_ref / empty_black_count
-    
-    #Percentage of color values to remove above and below the average square color before measuring piece color
-    percentange = 0.125
-    
-    #Compute lower and upper limits of colors to remove from each square before measuring piece color
-    color_refs = [[white_square_ref * (1 - percentange), white_square_ref * (1 + percentange)], 
-                  [black_square_ref * (1 - percentange), black_square_ref * (1 + percentange)]]
-    
-    #Iterate through each rank (horizontal row)
-    for y in range(8):
-        #Iterate through each file (vertical column)
-        for x in range(8):
-            #If current square is occupied
-            if (detection_array[y][x] == 1):
-                #Calculate the coordinates of the upper left corner of the rectangle to be measured
-                start_point = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
-                #Calculate the coordinates of the lower right corner off the rectange to be measured
-                end_point = (int(round(pixel +10 * pixel * (x + 1) - margin * pixel)), int(round(pixel + 10 * pixel * (y + 1) - margin * pixel)))
-                
-                #Section off square as just the part of the image to measure
-                square = gray[start_point[1]:end_point[1], start_point[0]:end_point[0]]
-                #Create a mask for the current square of colors that are close to the average color of the current square colors empty square color
-                #If the current square is white, (x+y)%2 will be 0, referencing the first nested list, otherwise the second nested list will be used when (x+y)%2 is 1 for black squares
-                square_mask = cv2.inRange(square, color_refs[(x + y) % 2][0], color_refs[(x + y) % 2][1])
-                #Remove the empty square color from the current square
-                output = cv2.bitwise_and(square, square, mask = cv2.bitwise_not(square_mask))
-                #Replace the square in the grayscale image with the masked image
-                gray[start_point[1]:end_point[1], start_point[0]:end_point[0]] = output
-                
-                #Take the average color of the piece, not considering the color of the empty square that was removed
-                color_array[y][x] = average_color(output)
-                
-                if add_text_to_image:
-                    #Print the average color of the piece on the grayscale image
-                    cv2.putText(gray, str(round(average_color(output), 1)), (int(start_point[0]), int(start_point[1] + pixel*2.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
-    
-    #Flatten the color array to a 1D array to bbe able to sort it
-    raveled_color_array = np.ravel(color_array)
-    #Sort the nonzero values of the flattened color array
-    color_array_sorted = np.sort(raveled_color_array[np.flatnonzero(color_array)])
-    
-    #Dictionary for what to display on each square of the output image depending on its color_array value
-    color_ref = {0:"Empty", 1:"Black", 2:"White"}
-    
-    #Iterate through each rank (horizontal row)
-    for y in range(8):
-        #Iterate through each file (vertical column)
-        for x in range(8):
-            #If the current square is occupied
-            if (color_array[y][x] > 0):
-                #If the average color of the current piece is in the bottom x number of average piece colors on the board, label it as black
-                #x is gotten from the turn_background list, where turn_background[1] tells the number of black pieces expected on the board
-                #turn_background is updated in the process_frame function based on when the get_detection_array shows a piece disappeared after whites move
-                if (color_array[y][x] in color_array_sorted[:turn_background[1]]):
-                    #Label the current square as having a black piece
-                    color_array[y][x] = 1
-                #If the current piece color isn't determined to be black, label it white
-                else:
-                    #Label it white
-                    color_array[y][x] = 2
-            #Calculate upper left corner of rectangle to put text in
-            start_point = (int(round(pixel + margin * pixel + 10 * pixel * x)), int(round(pixel + margin * pixel + 10 * pixel * y)))
-            if add_text_to_image:
-                #Label the current square with the determination of whether it is empty, or what color piece it has
-                cv2.putText(gray, color_ref[color_array[y][x]], (int(start_point[0]), int(start_point[1] + pixel*4.5)), cv2.FONT_HERSHEY_COMPLEX, text_size, 255, text_thickness)
-    return gray, color_array.astype(np.int64)
 
 def average_color(image, x, y, radius):
     '''
@@ -1470,7 +1308,7 @@ def main():
         #If the move wasn't legal
         if not (move in board.legal_moves):
             #Print the move wasn't legal
-            print("Not legal")
+            print(str(move) + " not legal")
             continue
         
         #Update the board array to reflect the move that was just made
