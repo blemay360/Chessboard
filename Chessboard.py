@@ -504,7 +504,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
     if (np.count_nonzero(detection_array) + 1 == turn_background[0] + turn_background[1]):
         #Subtract one piece from whichever side didn't just move
         turn_background[turn_background[2]] -= 1
-        print("Subtracting a piece from " + turn_dict[turn_background[2]])
+        #print("Subtracting a piece from " + turn_dict[turn_background[2]])
         #show_images("resize", ("Subtracting a piece from" + str(turn_background[2]), image))
         #cv2.waitKey(0)
 
@@ -1330,7 +1330,13 @@ def main():
         #Print the move that was made and the time it took to process the frame
         #print(move, time.time() - start)
         if board.is_check():
-            print("Check")
+            print("Check", end='')
+            if board.is_checkmate():
+                print("mate")
+                run = False
+                break
+            else:
+                print()
         
         if vs_comp and (turn_background[2] == 1):
             result = engine.play(board, chess.engine.Limit(time=0.5))
