@@ -1,12 +1,10 @@
 #Variables to change stuff on a high level
-#Whether to display the input image
-display_input = False
 #Whether to display any extra info windows
-display = False
-#Whether to wait for a keypress on each image or not
-wait = False
+display = [False, False, False, True] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
+#How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
+wait = 1
 #Whether to play against a computer
-vs_comp = True
+vs_comp = False
 #Which apriltags should be looked for
 #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
 tag_family = 'tag16h5'
@@ -53,6 +51,7 @@ def end_program():
 
 #-----------------------------------------APRILTAG FUNCTIONS
 def detect_apriltags(family, image, previous_detections=False):
+    global wait
     '''
     Takes a family of apriltags to look for, as well as an image to look at, and returns an array with a dictionary of detection info for each apriltag detected in the image
     '''
@@ -150,7 +149,7 @@ def detect_apriltags(family, image, previous_detections=False):
                 ##Show the image
                 #cv2.imshow("Input Image", image)
                 ##Wait for a keypress
-                #cv2.waitKey(1)
+                #cv2.waitKey(wait)
                 #Return empty list
                 return []
         #If there are extra apriltags detected with duplicate ids
@@ -392,7 +391,7 @@ def perspective_shift(image, corners):
     return shifted_image
 
 def get_detection_color_array(image, turn_background, first_frame=False):
-    global edge_count_threshold
+    global edge_count_threshold, wait
     '''
     Function to detect pieces on a chessboard
     Takes in an image of just the chessboard, perspective shifted, and the amount of pieces on the board in the previous frame to help with thresholding
@@ -493,14 +492,17 @@ def get_detection_color_array(image, turn_background, first_frame=False):
         edge_count_threshold = int(min(occupied_edge_count) * 0.5)
     
     if (np.count_nonzero(detection_array) > (turn_background[0] + turn_background[1]) or np.count_nonzero(detection_array) < (turn_background[0] + turn_background[1] - 1)):
+        if (first_frame):
+            input("Pieces not in starting postition. Press enter to restart game")
+            process_game()
         print("Error detecting number of pieces on board")
         print("Counted " + str(np.count_nonzero(detection_array)) + " pieces")
         print("Expected " + str(turn_background[0] + turn_background[1]) + " or " + str((turn_background[0] + turn_background[1]) - 1) + " pieces")
-        print("Edge count threshold is " + str(edge_count_threshold))
+        #print("Edge count threshold is " + str(edge_count_threshold))
         print(detection_array)
-        print(edge_count)
-        show_images('resize', ("Piece Detection", detection_image))
-        cv2.waitKey(1)
+        #print(edge_count)
+        #show_images('resize', ("Piece Detection", detection_image))
+        #cv2.waitKey(wait)
         
         #Maybe change the threshold here?
     
@@ -511,7 +513,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
         turn_background[turn_background[2]] -= 1
         #print("Subtracting a piece from " + turn_dict[turn_background[2]])
         #show_images("resize", ("Subtracting a piece from" + str(turn_background[2]), image))
-        #cv2.waitKey(0)
+        #cv2.waitKey(wait)
 
     #Flatten the color array to a 1D array to bbe able to sort it
     raveled_color_array = np.ravel(color_array)
@@ -684,8 +686,8 @@ def knot_detection(image, border_template, detections):
     Takes in the image to check and location of apriltags in the image
     Returns true if the image isn't blocked, false if it is blocked
     '''
-    #Whether to display the output
-    global display
+    #Whether to display the output and how long to wait for
+    global display, wait
     
     #Convert copy of the reference image to grayscale
     template = cv2.cvtColor(copy.copy(border_template), cv2.COLOR_BGR2GRAY)
@@ -734,19 +736,12 @@ def knot_detection(image, border_template, detections):
         #Stack the blocked edges, edges, and blurred edges to all display in the same image
         output = np.stack((template // 4, edges_blurred // 4, blocked_edges // 2), axis=-1)
         
-        if display:
-            #Set the window to be able to be resized
-            cv2.namedWindow("Edges", cv2.WINDOW_NORMAL)
-            #Resize the window
-            if pi:
-                cv2.resizeWindow("Edges", 200, 200)
-            else:
-                cv2.resizeWindow("Edges", 700,700)
+        if display[3]:
             #Show calculated results over the image
-            cv2.imshow("Edges", image // 2 + output)
-            #cv2.imshow("Edges", edges_blurred)
+            show_images("resize", ("Edges", cv2.addWeighted(image, 1, output, 1, 0)))
+            #show_images("resize", ("Edges", edges_blurred))
             #Wait for keypress
-            cv2.waitKey(1)
+            cv2.waitKey(wait)
         
         #If there were no blocked edges return true
         if not np.count_nonzero(blocked_edges):
@@ -758,8 +753,10 @@ def knot_detection(image, border_template, detections):
     else:
         return False
     
-#-----------------------------------------IMAGE DETECTION MAIN FUNCTION
+#-----------------------------------------IMAGE DETECTION MAIN
 def process_frame(frame, border_template, turn_background, first_frame, previous_detections=False):
+    global wait
+    #Assume frame is good until find evidence otherwise
     valid_frame = True
         
     if first_frame:
@@ -777,7 +774,7 @@ def process_frame(frame, border_template, turn_background, first_frame, previous
         #Place circles on inside corners of each apriltag
         #circle_image(apriltagCorners, grab_inside_corners(detections), 'red', 'picture')
         #show_images('resize', ('Apriltag Corners', apriltagCorners))
-        #cv2.waitKey(0)
+        #cv2.waitKey(wait)
                 
         if not knot_detection(frame, border_template, detections):
             #print("Gold border not clear")
@@ -1173,9 +1170,9 @@ def pi_take_image(camera):
     input_image = rawCapture.array
     return input_image
     
-#-----------------------------------------MAIN FUNCTION
-def main():
-    global engine, display
+#-----------------------------------------MAIN FUNCTIONS
+def setup():
+    global engine, window, square_size, border_template
     #The pi screen is smaller and needs different sizing
     if pi:
         #Set square size to 40 pixels
@@ -1186,15 +1183,6 @@ def main():
         square_size = 70
     #Create a gui to display the state of the chessboard, saving the window it creates  for later functions
     window, square_size = create_gui(square_size)
-
-    #Create a board array to keep track of the images displayed on the gui chessboard
-    board_array = create_board_array()
-
-    #Create a board variable to keep track of the game
-    board = chess.Board()
-
-    #Print the chessboard to the window
-    print_board(window, board_array, square_size)
     
     #Set desired difficulty of the computer
     #If playing computer, use desired difficulty
@@ -1207,12 +1195,23 @@ def main():
     #Find and open the desired engine for the difficulty
     engine = open_engine(difficulty)
     
+    #Open reference image with border pattern
+    border_template = cv2.imread('ComparisonImages/11in_TestChessboard_16h5_Comparison_5pt.png')
+        
+def process_game():
+    global engine, window, square_size, border_template, wait
+    #Create a board array to keep track of the images displayed on the gui chessboard
+    board_array = create_board_array()
+
+    #Create a board variable to keep track of the game
+    board = chess.Board()
+
+    #Print the chessboard to the window
+    print_board(window, board_array, square_size)
+    
     #Initialize a variable to keep track of how many white and black pieces are on the board, and which side just moved
     turn_background = [16, 16, 0]
     #[# of white pieces on board, # of black pieces on board, 0=black just moved | 1=white just moved]
-    
-    #Open reference image with border pattern
-    border_template = cv2.imread('ComparisonImages/11in_TestChessboard_16h5_Comparison_5pt.png')
     
     if pi:
         #Set up camera
@@ -1223,41 +1222,48 @@ def main():
         #input_image = imutils.rotate(input_image, 180)
         cv2.imwrite("TestingImages/Debugging/"+ time.ctime(time.time()) + ".jpg", input_image)
     else:
+        files = os.listdir(image_directory)
+        files.sort()
         #Read the first frame in
-        input_image = cv2.imread(image_directory + '1.jpg')
+        input_image = cv2.imread(image_directory + files[0])
         #input_image = cv2.imread(image_directory + 'medium_block.jpg')
         
-    if display_input:
-            #Show the input image
-            show_images('resize', ("Input Image", input_image))
-            #Pause until user presses a key
-            cv2.waitKey(10)
+    if display[0]:
+        #Show the input image
+        show_images('resize', ("Input Image", input_image))
+        cv2.waitKey(wait)
         
     #Save the color array as old to compare with the second frame later
     valid_frame, previous_detections, old_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, True)
     
-    if display:
+    if display[1]:
         #Show the grayscale color detection image and piece detection image
-        show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
+        show_images('resize', ('Color Values', color_detection))
+    if display[2]:
+        #Show the grayscale color detection image and piece detection image
+        show_images('resize', ('Piece Detection', piece_detection))
         
-    if wait:
+    if wait == 0:
         #Wait for a keypress while updating the chessboard gui
         while (cv2.waitKey(100) == -1):
             print_board(window, board_array, square_size)
     else:
         #Don't wait for a keypress
-        cv2.waitKey(1)
+        cv2.waitKey(wait)
 
     if not valid_frame:
         print("Couldn't validate first frame")
-        show_images('resize', ("Input Image", input_image))
-        cv2.waitKey(0)
-        end_program()
-        quit()
+        input("Pieces not in starting postition. Press enter to restart game")
+        process_game()
+        #show_images('resize', ("Input Image", input_image))
+        #cv2.waitKey(wait)
+        #end_program()
+        #quit()
 
-    #-----------------------------------------LOOP
     run = True
     counter = 2
+    if not pi:
+        file_counter = 1
     right_move = 1
     while run:
         #Start a timer to measure processing time for the current frame
@@ -1275,31 +1281,39 @@ def main():
             #input_image = imutils.rotate(input_image, 180)
             cv2.imwrite("TestingImages/Debugging/" + time.ctime(time.time()) + ".jpg", input_image)
         else:
-            input_image = cv2.imread(image_directory + str(counter) + '.jpg')
+            input_image = cv2.imread(image_directory + files[file_counter])
         
         #Process the current frame
         valid_frame, previous_detections, new_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, False, previous_detections)
         
-        if display:
-            #Show the grayscale color detection image and piece detection image for the current image
-            show_images('resize', ('Color Values', color_detection), ('Piece Detection', piece_detection))
-            cv2.waitKey(1)
+        if display[0]:
+            #Show the input image
+            show_images('resize', ("Input Image", input_image))
+        if display[1]:
+            #Show the grayscale color detection image and piece detection image
+            show_images('resize', ('Color Values', color_detection))
+        if display[2]:
+            #Show the grayscale color detection image and piece detection image
+            show_images('resize', ('Piece Detection', piece_detection))
+        cv2.waitKey(wait)
         
         #If the frame isn't valid, restart from the beginning of the loop
         if not valid_frame:
+            if not pi:
+                file_counter += 1
             continue
-        
-        #Show the input image
-        if display_input:
-            show_images('resize', ("Input Image", input_image))
         
         #Compare the color detection array of the current image with the last image to deterime the move that was made
         if not np.array_equal(old_color_array, new_color_array):
             move = color_array_to_uci(old_color_array, new_color_array, board)
         else:
+            if not pi:
+                file_counter += 1
             continue
         
         if (move == ['','']):
+            if not pi:
+                file_counter += 1
             continue
         else:
             #Compute the move variable using the chess library
@@ -1315,12 +1329,16 @@ def main():
             else:
                 print("Wrong move")
                 right_move = 0
+                if not pi:
+                    file_counter += 1
                 continue
         
         #If the move wasn't legal
         if not (move in board.legal_moves):
             #Print the move wasn't legal
             print(str(move) + " not legal")
+            if not pi:
+                file_counter += 1
             continue
         
         #Update the board array to reflect the move that was just made
@@ -1349,18 +1367,21 @@ def main():
             #board_array = update_board_array_uci(board, board_array, chess.Move.uci(result.move))
             #board.push(result.move)
         
-        if wait:
+        if wait == 0:
             #Wait for a keypress while updating the chessboard gui
             while (cv2.waitKey(100) == -1):
                 print_board(window, board_array, square_size)
         else:
             #Don't wait for a keypress
-            cv2.waitKey(1)
+            cv2.waitKey(wait)
         #Update counter to know we're on the next frame
+        if not pi:
+                file_counter += 1
         counter += 1
         
         if not pi:
-            max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
+            #max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
+            max_file_count = len(os.listdir(image_directory))
         else:
             max_file_count = 0
         
@@ -1373,6 +1394,10 @@ def main():
     #Close engine
     engine.quit()
     #When all images have been processed, wait 1 second to allow the user to decompress before ending
-    time.sleep(1)
+    time.sleep(0.5)
+
+def main():
+    setup()
+    process_game()
 
 main()

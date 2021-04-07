@@ -10852,3 +10852,69 @@ Tue Apr  6 21:09:32 2021 time is up
 Tue Apr  6 21:09:32 2021 OUT: bestmove f8g7
 Tue Apr  6 21:09:45 2021 IN: quit
 Tue Apr  6 21:09:45 2021 time is up
+Wed Apr  7 11:14:35 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:14:35 2021 stdin thread started
+Wed Apr  7 11:14:35 2021 IN: uci
+Wed Apr  7 11:14:35 2021 OUT: id name Feeks
+Wed Apr  7 11:14:35 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:14:35 2021 OUT: uciok
+Wed Apr  7 11:15:35 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:15:35 2021 stdin thread started
+Wed Apr  7 11:15:35 2021 IN: uci
+Wed Apr  7 11:15:35 2021 OUT: id name Feeks
+Wed Apr  7 11:15:35 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:15:35 2021 OUT: uciok
+Wed Apr  7 11:15:49 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:15:49 2021 stdin thread started
+Wed Apr  7 11:15:49 2021 IN: uci
+Wed Apr  7 11:15:49 2021 OUT: id name Feeks
+Wed Apr  7 11:15:49 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:15:49 2021 OUT: uciok
+Wed Apr  7 11:16:26 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:16:26 2021 stdin thread started
+Wed Apr  7 11:16:26 2021 IN: uci
+Wed Apr  7 11:16:26 2021 OUT: id name Feeks
+Wed Apr  7 11:16:26 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:16:26 2021 OUT: uciok
+Wed Apr  7 11:22:06 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:22:06 2021 stdin thread started
+Wed Apr  7 11:22:06 2021 IN: uci
+Wed Apr  7 11:22:06 2021 OUT: id name Feeks
+Wed Apr  7 11:22:06 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:22:06 2021 OUT: uciok
+Wed Apr  7 11:25:21 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:25:21 2021 stdin thread started
+Wed Apr  7 11:25:21 2021 IN: uci
+Wed Apr  7 11:25:21 2021 OUT: id name Feeks
+Wed Apr  7 11:25:21 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:25:21 2021 OUT: uciok
+Wed Apr  7 11:27:34 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:27:34 2021 stdin thread started
+Wed Apr  7 11:27:34 2021 IN: uci
+Wed Apr  7 11:27:34 2021 OUT: id name Feeks
+Wed Apr  7 11:27:34 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:27:34 2021 OUT: uciok
+Wed Apr  7 11:28:14 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:28:14 2021 stdin thread started
+Wed Apr  7 11:28:14 2021 IN: uci
+Wed Apr  7 11:28:14 2021 OUT: id name Feeks
+Wed Apr  7 11:28:14 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:28:14 2021 OUT: uciok
+Wed Apr  7 11:28:37 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:28:37 2021 stdin thread started
+Wed Apr  7 11:28:37 2021 IN: uci
+Wed Apr  7 11:28:37 2021 OUT: id name Feeks
+Wed Apr  7 11:28:37 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:28:37 2021 OUT: uciok
+Wed Apr  7 11:29:27 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:29:27 2021 stdin thread started
+Wed Apr  7 11:29:27 2021 IN: uci
+Wed Apr  7 11:29:27 2021 OUT: id name Feeks
+Wed Apr  7 11:29:27 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:29:27 2021 OUT: uciok
+Wed Apr  7 11:30:02 2021 Set TT size to 8192 entries 
+Wed Apr  7 11:30:02 2021 stdin thread started
+Wed Apr  7 11:30:02 2021 IN: uci
+Wed Apr  7 11:30:02 2021 OUT: id name Feeks
+Wed Apr  7 11:30:02 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Wed Apr  7 11:30:02 2021 OUT: uciok
