@@ -2,11 +2,11 @@
 #Whether to display the input image
 display_input = False
 #Whether to display any extra info windows
-display = True
+display = False
 #Whether to wait for a keypress on each image or not
-wait = True
+wait = False
 #Whether to play against a computer
-vs_comp = False
+vs_comp = True
 #Which apriltags should be looked for
 #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
 tag_family = 'tag16h5'
@@ -1221,7 +1221,7 @@ def main():
         input_image = pi_take_image(camera)
         #Rotate image 180 degrees to correct for camera flip
         #input_image = imutils.rotate(input_image, 180)
-        cv2.imwrite("TestingImages/Debugging/1.jpg", input_image)
+        cv2.imwrite("TestingImages/Debugging/"+ time.ctime(time.time()) + ".jpg", input_image)
     else:
         #Read the first frame in
         input_image = cv2.imread(image_directory + '1.jpg')
@@ -1273,7 +1273,7 @@ def main():
         if pi:
             input_image = pi_take_image(camera)
             #input_image = imutils.rotate(input_image, 180)
-            cv2.imwrite("TestingImages/Debugging/" + str(counter) + ".jpg", input_image)
+            cv2.imwrite("TestingImages/Debugging/" + time.ctime(time.time()) + ".jpg", input_image)
         else:
             input_image = cv2.imread(image_directory + str(counter) + '.jpg')
         
