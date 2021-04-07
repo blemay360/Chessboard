@@ -2,11 +2,11 @@
 #Whether to display the input image
 display_input = False
 #Whether to display any extra info windows
-display = False
+display = True
 #Whether to wait for a keypress on each image or not
-wait = False
+wait = True
 #Whether to play against a computer
-vs_comp = True
+vs_comp = False
 #Which apriltags should be looked for
 #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
 tag_family = 'tag16h5'
@@ -81,6 +81,11 @@ def detect_apriltags(family, image, previous_detections=False):
             left = min(return_tag_info(previous_detections, tag_id, 'lt')[0], return_tag_info(previous_detections, tag_id, 'lb')[0])
             #Find the highest x value of the right two tag corners
             right = max(return_tag_info(previous_detections, tag_id, 'rt')[0], return_tag_info(previous_detections, tag_id, 'rb')[0])
+            
+            #If any of the values above aren't found, return None to search whole image
+            if (top == -1) or (bottom == -1) or (left == -1) or (right == -1):
+                detection_list = [None, None, None, None]
+                break
             
             #Slightly increase the window to look for the apriltag in
             top = bottom - int(percent_increase * abs(bottom - top))
@@ -180,7 +185,7 @@ def return_tag_info(detections, tag_id, info='center'):
             
     if (index == None):
         print("Error finding apriltag " + str(tag_id))
-        return None
+        return (-1, -1)
     
     #If the info variable isn't there or is 'center'
     if (info == 'center'):
