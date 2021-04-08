@@ -1,8 +1,8 @@
 #Variables to change stuff on a high level
 #Whether to display any extra info windows
-display = [False, False, False, True] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
+display = [False, True, False, True] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
-wait = 1
+wait = 0
 #Whether to play against a computer
 vs_comp = True
 #File directory to get images from
@@ -601,10 +601,12 @@ def average_color(image, x, y, radius):
     average = round(np.average(color_measure[np.nonzero(mask)]))
     #Find the minimum hue value of the piece, gold pieces generally have minimum values in the 100s, silver pieces have minimum values close to 0
     minimum = min(np.ravel(color_measure[np.nonzero(mask)]))
+    #Find standard deviation of the hue of the piece
+    std = np.std(np.ravel(color_measure[np.nonzero(mask)]))
     #Add the lowest value of the array to the average in order to correct for glare
-    offset_average = average + minimum #This isn't the best way to fix getting the wrong colors, maybe look into standard deviation instead since silver pieces can have large standard deviations that cause the average value to be too high
+    offset_average = average - std
     
-    return color_measure, average + minimum
+    return color_measure, offset_average
 
 def focus_on_border(image, detections):
     '''
