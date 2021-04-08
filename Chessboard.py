@@ -2,14 +2,9 @@
 #Whether to display any extra info windows
 display = [False, False, False, True] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
-wait = 1
+wait = 0
 #Whether to play against a computer
-vs_comp = False
-#Which apriltags should be looked for
-#Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
-tag_family = 'tag16h5'
-#Default edge_count_threshold, gets updated on first frame to better suit current conditions
-edge_count_threshold = 50000
+vs_comp = True
 #File directory to get images from
 image_directory = 'TestingImages/Debugging/'
 
@@ -390,6 +385,9 @@ def perspective_shift(image, corners):
     
     return shifted_image
 
+#Default edge_count_threshold, gets updated on first frame to better suit current conditions
+edge_count_threshold = 50000
+
 def get_detection_color_array(image, turn_background, first_frame=False):
     global edge_count_threshold, wait
     '''
@@ -741,7 +739,7 @@ def knot_detection(image, border_template, detections):
             show_images("resize", ("Edges", cv2.addWeighted(image, 1, output, 1, 0)))
             #show_images("resize", ("Edges", edges_blurred))
             #Wait for keypress
-            cv2.waitKey(wait)
+            cv2.waitKey(1)
         
         #If there were no blocked edges return true
         if not np.count_nonzero(blocked_edges):
@@ -758,7 +756,11 @@ def process_frame(frame, border_template, turn_background, first_frame, previous
     global wait
     #Assume frame is good until find evidence otherwise
     valid_frame = True
-        
+    
+    #Which apriltags should be looked for
+    #Tags I've used in the project: 'tag16h5', 'tag36h11', 'tagStandard41h12'
+    tag_family = 'tag16h5'
+    
     if first_frame:
         #Run apriltag detection on whole image
         detections = detect_apriltags(tag_family, frame)
@@ -1070,7 +1072,7 @@ def create_gui(square_size):
     pygame.init()
     
     #Set the size of the window to 8 squares by 8 squares
-    window = pygame.display.set_mode((square_size * 8, square_size * 8))
+    window = pygame.display.set_mode((square_size * 12, square_size * 8))
     #Set the window name to Chessboard
     pygame.display.set_caption('Chessboard')
     #Load in an icon of a knight
@@ -1102,9 +1104,11 @@ def draw_grid(window, square_size):
                 color = (119, 149, 86) #green
             #Color the current square the selected color
             pygame.draw.rect(window, color, pygame.Rect(File * square_size, rank * square_size, square_size, square_size))
+            
+    pygame.draw.rect(window, (60, 60, 60), pygame.Rect(8 * square_size, 0 * square_size, square_size * 4, square_size * 8))
     return window
 
-def print_board(window, board_array, square_size):
+def print_board(window, board_array, square_size, move=False):
     '''
     Function to print the board_array on the pygame window
     Takes in the window to print on, the board array with piece icons, locations, and characters, and the size of the square to get the spacing right
@@ -1124,6 +1128,25 @@ def print_board(window, board_array, square_size):
                 board_array[x][y][1].centery = (square_size // 2) + square_size * y
                 #Send updates to the window
                 window.blit(board_array[x][y][0], board_array[x][y][1])
+    
+    if move:              
+        #Set the font to display
+        #1st parameter is the font file
+        #2nd parameter is size of the font
+        font = pygame.font.Font('freesansbold.ttf', 32)
+        
+        #Set the text to display in white
+        text = font.render(move, True, (255, 255, 255), (60, 60, 60))
+        
+        #Get the rectangle in which text is displayed
+        textRect = text.get_rect()
+        
+        #Set the center of the rectangle text is displayed to the top of the right bit
+        textRect.center = (square_size * 10, 80 // 2)
+        
+        #Send the text to be displayed
+        window.blit(text, textRect)
+    
     #Display the window
     pygame.display.flip()
 
@@ -1185,13 +1208,8 @@ def setup():
     window, square_size = create_gui(square_size)
     
     #Set desired difficulty of the computer
-    #If playing computer, use desired difficulty
-    if vs_comp:
-        difficulty = 900
-    #Otherwise use the max rated engine for best suggestions
-    else:
-        difficulty = 3000
-     
+    difficulty = 900
+
     #Find and open the desired engine for the difficulty
     engine = open_engine(difficulty)
     
@@ -1231,7 +1249,7 @@ def process_game():
     if display[0]:
         #Show the input image
         show_images('resize', ("Input Image", input_image))
-        cv2.waitKey(wait)
+        cv2.waitKey(1)
         
     #Save the color array as old to compare with the second frame later
     valid_frame, previous_detections, old_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, True)
@@ -1255,25 +1273,20 @@ def process_game():
         print("Couldn't validate first frame")
         input("Pieces not in starting postition. Press enter to restart game")
         process_game()
-        #show_images('resize', ("Input Image", input_image))
-        #cv2.waitKey(wait)
-        #end_program()
-        #quit()
 
+    #--------------------------------------------LOOP
     run = True
-    counter = 2
+    move_counter = 2
     if not pi:
         file_counter = 1
-    right_move = 1
+        
+    result = False    
+    
     while run:
         #Start a timer to measure processing time for the current frame
         start = time.time()
         #Update the variable of which side just went
-        turn_background[2] = 1 - (counter % 2)
-        
-        #If the wrong move was made for a computer match, wait here for user to correct before reading in a frame
-        if vs_comp and wait:
-            cv2.waitKey(right_move)
+        turn_background[2] = 1 - (move_counter % 2)
         
         #Read the current frame
         if pi:
@@ -1323,12 +1336,11 @@ def process_game():
         if vs_comp and (turn_background[2] == 0):
             #If the move just made was the same one as the engine calculated
             if (move == result.move):
+                result = False
                 print("Good job")
-                right_move = 1
             #If the move wasn't the same as the engine's move
             else:
                 print("Wrong move")
-                right_move = 0
                 if not pi:
                     file_counter += 1
                 continue
@@ -1346,39 +1358,54 @@ def process_game():
         #Push the move to the board
         board.push(move)
         #Update the chessboard gui
-        print_board(window, board_array, square_size)
+        if result:
+            print_board(window, board_array, square_size, board.san(result.move))
+        else:
+            print_board(window, board_array, square_size)
         #Replace the old color array with the current color array to prepare for the next frame
         old_color_array = new_color_array
         
         #Print the move that was made and the time it took to process the frame
         #print(move, time.time() - start)
+        
+        #If there is a check on the board
         if board.is_check():
+            #Print check
             print("Check", end='')
+            #If there is a checkmate on the board
             if board.is_checkmate():
+                #Add mate to the end of the printed check
                 print("mate")
+                #Stop running the loop
                 run = False
+                #Break out of the loop
                 break
             else:
                 print()
         
         if vs_comp and (turn_background[2] == 1):
             result = engine.play(board, chess.engine.Limit(time=0.5))
-            print("Computer move: " + str(board.san(result.move)))
-            #board_array = update_board_array_uci(board, board_array, chess.Move.uci(result.move))
-            #board.push(result.move)
+            #print("Computer move: " + str(board.san(result.move)))
+            print_board(window, board_array, square_size, board.san(result.move))
         
         if wait == 0:
             #Wait for a keypress while updating the chessboard gui
             while (cv2.waitKey(100) == -1):
-                print_board(window, board_array, square_size)
+                #Update the chessboard gui
+                if result:
+                    print_board(window, board_array, square_size, board.san(result.move))
+                else:
+                    print_board(window, board_array, square_size)
         else:
             #Don't wait for a keypress
             cv2.waitKey(wait)
-        #Update counter to know we're on the next frame
+            
+        #Update move counter to know we're on the next frame
+        move_counter += 1
         if not pi:
                 file_counter += 1
-        counter += 1
         
+        #If running from files, calculate the number of files to run
         if not pi:
             #max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
             max_file_count = len(os.listdir(image_directory))
@@ -1386,14 +1413,14 @@ def process_game():
             max_file_count = 0
         
         #If it's running from images and finishes the last image
-        if (counter == max_file_count) and not pi:
+        if (move_counter == max_file_count) and not pi:
             #Stop running the program
             print("Reached end of files")
             run = False
     
     #Close engine
     engine.quit()
-    #When all images have been processed, wait 1 second to allow the user to decompress before ending
+    #When all images have been processed, wait a bit to allow the user to decompress before ending
     time.sleep(0.5)
 
 def main():
