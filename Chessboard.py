@@ -1,6 +1,6 @@
 #Variables to change stuff on a high level
 #Whether to display any extra info windows
-display = [False, False, False, False] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
+display = [False, False, False, False] #[0, 1, 2, 3] 0 displays input frame 1 displays piece color detection, 2 displays edge detection, 3 displays knot detection
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
 wait = 1
 #Whether to play against a computer
@@ -487,7 +487,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
 
     if first_frame:
         #Set new edge_count_threshold to be slightly smaller than the lowest edge count of an occupied square
-        edge_count_threshold = int(min(occupied_edge_count) * 0.5)
+        edge_count_threshold = int(min(occupied_edge_count) * 0.4)
     
     if (np.count_nonzero(detection_array) > (turn_background[0] + turn_background[1]) or np.count_nonzero(detection_array) < (turn_background[0] + turn_background[1] - 1)):
         if (first_frame):
@@ -496,9 +496,9 @@ def get_detection_color_array(image, turn_background, first_frame=False):
         print("Error detecting number of pieces on board")
         print("Counted " + str(np.count_nonzero(detection_array)) + " pieces")
         print("Expected " + str(turn_background[0] + turn_background[1]) + " or " + str((turn_background[0] + turn_background[1]) - 1) + " pieces")
-        #print("Edge count threshold is " + str(edge_count_threshold))
+        print("Edge count threshold is " + str(edge_count_threshold))
         print(detection_array)
-        #print(edge_count)
+        print(edge_count)
         #show_images('resize', ("Piece Detection", detection_image))
         #cv2.waitKey(wait)
         
@@ -557,9 +557,9 @@ def piece_detection(image):
     Takes in the image to measure, and outputs the measured image and the number of edges
     '''
     #Blur the image to get rid of noise and bad edge measurements
-    blurred = cv2.medianBlur(image,7)
+    blurred = cv2.medianBlur(image,5)
     #Perform edge measurement
-    edges = cv2.Canny(blurred,80,100)
+    edges = cv2.Canny(blurred,90,100)
     
     #If there are edges
     if np.count_nonzero(edges):
