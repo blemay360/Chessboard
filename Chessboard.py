@@ -1221,8 +1221,9 @@ def setup():
 def process_game():
     global engine, window, square_size, border_template, wait
     #Remove all previous debugging images
-    for files in os.listdir(image_directory):
-        os.remove(os.path.join(image_directory, files))
+    if pi:
+        for files in os.listdir(image_directory):
+            os.remove(os.path.join(image_directory, files))
     
     #Create a board array to keep track of the images displayed on the gui chessboard
     board_array = create_board_array()

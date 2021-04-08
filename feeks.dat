@@ -12134,3 +12134,15 @@ Thu Apr  8 16:13:03 2021 IN: uci
 Thu Apr  8 16:13:03 2021 OUT: id name Feeks
 Thu Apr  8 16:13:03 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
 Thu Apr  8 16:13:03 2021 OUT: uciok
+Thu Apr  8 17:04:48 2021 Set TT size to 8192 entries 
+Thu Apr  8 17:04:48 2021 stdin thread started
+Thu Apr  8 17:04:48 2021 IN: uci
+Thu Apr  8 17:04:48 2021 OUT: id name Feeks
+Thu Apr  8 17:04:48 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Thu Apr  8 17:04:48 2021 OUT: uciok
+Thu Apr  8 17:07:06 2021 Set TT size to 8192 entries 
+Thu Apr  8 17:07:06 2021 stdin thread started
+Thu Apr  8 17:07:06 2021 IN: uci
+Thu Apr  8 17:07:06 2021 OUT: id name Feeks
+Thu Apr  8 17:07:06 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Thu Apr  8 17:07:06 2021 OUT: uciok
