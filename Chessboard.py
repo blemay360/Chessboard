@@ -486,8 +486,8 @@ def get_detection_color_array(image, turn_background, first_frame=False):
                 detection_array[y][x] = 0
 
     if first_frame:
-        #Set new edge_count_threshold to be slightly smaller than the lowest edge count of an occupied square
-        edge_count_threshold = int(min(occupied_edge_count) * 0.4)
+        #Set new edge_count_threshold to be smaller than the lowest edge count of an occupied square
+        edge_count_threshold = int(min(occupied_edge_count) * 0.1)
     
     if (np.count_nonzero(detection_array) > (turn_background[0] + turn_background[1]) or np.count_nonzero(detection_array) < (turn_background[0] + turn_background[1] - 1)):
         if (first_frame):
@@ -499,6 +499,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
         print("Edge count threshold is " + str(edge_count_threshold))
         print(detection_array)
         print(edge_count)
+        return detection_image, -1*np.ones((8, 8), dtype=int), color_image, -1*np.ones((8, 8), dtype=int)
         #show_images('resize', ("Piece Detection", detection_image))
         #cv2.waitKey(wait)
         
@@ -790,6 +791,10 @@ def process_frame(frame, border_template, turn_background, first_frame, previous
             
             #Go through each square of the chessboard to tell if square is populated with piece and measure piece color
             piece_detection, detection_array, color_detection, color_array = get_detection_color_array(shifted, turn_background, first_frame)
+            
+            if np.amin(detection_array < 0):
+                valid_frame = False
+                color_array = np.zeros((8, 8), dtype=int)
     #If not all four apriltags are visisble
     else:
         valid_frame = False
