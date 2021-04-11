@@ -1202,7 +1202,7 @@ def pi_take_image(camera):
     
 #-----------------------------------------MAIN FUNCTIONS
 def setup():
-    global engine, window, square_size, border_template
+    global engine, window, square_size, border_template, camera
     #The pi screen is smaller and needs different sizing
     if pi:
         #Set square size to 40 pixels
@@ -1226,7 +1226,7 @@ def setup():
     border_template = cv2.imread('ComparisonImages/11in_TestChessboard_16h5_Comparison_5pt.png')
         
 def process_game():
-    global engine, window, square_size, border_template, wait
+    global engine, window, square_size, border_template, wait, camera
     #Remove all previous debugging images
     if pi:
         for files in os.listdir(image_directory):
