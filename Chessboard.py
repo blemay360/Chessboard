@@ -1,10 +1,10 @@
 #Variables to change stuff on a high level
 #Whether to display any extra info windows
-display = [False, False, False, False] #[0, 1, 2, 3] 0 displays input frame 1 displays piece color detection, 2 displays edge detection, 3 displays knot detection
+display = [False, False, True, False] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
 wait = 1
 #Whether to play against a computer
-vs_comp = True
+vs_comp = False
 #File directory to get images from
 image_directory = 'TestingImages/Debugging/'
 
@@ -558,9 +558,9 @@ def piece_detection(image):
     Takes in the image to measure, and outputs the measured image and the number of edges
     '''
     #Blur the image to get rid of noise and bad edge measurements
-    blurred = cv2.medianBlur(image,5)
+    blurred = cv2.medianBlur(image,3)
     #Perform edge measurement
-    edges = cv2.Canny(blurred,90,100)
+    edges = cv2.Canny(blurred,80,100)
     
     #If there are edges
     if np.count_nonzero(edges):
@@ -583,7 +583,10 @@ def piece_detection(image):
     edges = np.stack((edges,)*3, axis=-1)
     #Find total amount of edges
     edge_count = np.sum(edges)
-        
+    
+    if (std < image.shape[0] // 5):
+        std = image.shape[0] // 5
+    
     return edges, edge_count, x_average, y_average, std
 
 def average_color(image, x, y, radius):
@@ -1294,7 +1297,21 @@ def process_game():
         
     result = False    
     
+    #If running from files, calculate the number of files to run
+    if not pi:
+        #max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
+        max_file_count = len(os.listdir(image_directory))
+    else:
+        max_file_count = 0
+    
     while run:
+        #If it's running from images and finishes the last image
+        if (file_counter == max_file_count) and not pi:
+            #Stop running the program
+            print("Reached end of files")
+            run = False
+            break
+        
         #Start a timer to measure processing time for the current frame
         start = time.time()
         #Update the variable of which side just went
@@ -1308,6 +1325,12 @@ def process_game():
         else:
             input_image = cv2.imread(image_directory + files[file_counter])
         
+        #print(file_counter, max_file_count)
+        
+        #if (file_counter + 2 == max_file_count):
+            #print("Transitioning wait to 0")
+            #wait = 0
+        
         #Process the current frame
         valid_frame, previous_detections, new_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, False, previous_detections)
         
@@ -1316,10 +1339,10 @@ def process_game():
             show_images('resize', ("Input Image", input_image))
         if display[1]:
             #Show the grayscale color detection image and piece detection image
-            show_images('resize', ('Color Values', color_detection))
+            show_images('resize', ('Color Values', piece_detection))
         if display[2]:
             #Show the grayscale color detection image and piece detection image
-            show_images('resize', ('Piece Detection', piece_detection))
+            show_images('resize', ('Piece Detection', color_detection))
         cv2.waitKey(wait)
         
         #If the frame isn't valid, restart from the beginning of the loop
@@ -1416,19 +1439,6 @@ def process_game():
         move_counter += 1
         if not pi:
                 file_counter += 1
-        
-        #If running from files, calculate the number of files to run
-        if not pi:
-            #max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
-            max_file_count = len(os.listdir(image_directory))
-        else:
-            max_file_count = 0
-        
-        #If it's running from images and finishes the last image
-        if (move_counter == max_file_count) and not pi:
-            #Stop running the program
-            print("Reached end of files")
-            run = False
     
     #Close engine
     engine.quit()

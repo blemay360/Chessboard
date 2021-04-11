@@ -12376,3 +12376,202 @@ Sun Apr 11 14:27:37 2021 nps: 1333.937683, nodes: 677, tt_hits: 14.473684%, avg 
 Sun Apr 11 14:27:37 2021 time is up
 Sun Apr 11 14:27:37 2021 OUT: bestmove d8e8
 Sun Apr 11 14:28:27 2021 time is up
+Sun Apr 11 14:31:14 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:31:14 2021 stdin thread started
+Sun Apr 11 14:31:14 2021 IN: uci
+Sun Apr 11 14:31:14 2021 OUT: id name Feeks
+Sun Apr 11 14:31:14 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:31:14 2021 OUT: uciok
+Sun Apr 11 14:31:16 2021 IN: ucinewgame
+Sun Apr 11 14:31:16 2021 IN: isready
+Sun Apr 11 14:31:16 2021 OUT: readyok
+Sun Apr 11 14:31:16 2021 IN: position startpos moves e2e4
+Sun Apr 11 14:31:16 2021 IN: go movetime 500
+Sun Apr 11 14:31:16 2021 OUT: info string waiting for init thread
+Sun Apr 11 14:31:16 2021 OUT: info string initialized
+Sun Apr 11 14:31:16 2021 search for 0.500000 seconds
+Sun Apr 11 14:31:16 2021 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+Sun Apr 11 14:31:16 2021 depth 1 score cp 42 time 4 nodes 21 pv f7f6
+Sun Apr 11 14:31:16 2021 depth 2 score cp 30 time 27 nodes 135 pv f7f6 g1f3
+Sun Apr 11 14:31:16 2021 depth 3 score cp 35 time 83 nodes 476 pv f7f6 g1f3 c7c6
+Sun Apr 11 14:31:17 2021 time is up
+Sun Apr 11 14:31:17 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Apr 11 14:31:17 2021 selected move: [35.0, Move.from_uci('f7f6'), 3, 0.5053095817565918]
+Sun Apr 11 14:31:17 2021 nps: 5483.580397, nodes: 2772, tt_hits: 20.253165%, avg bco index: 0.85
+Sun Apr 11 14:31:17 2021 time is up
+Sun Apr 11 14:31:17 2021 OUT: bestmove f7f6
+Sun Apr 11 14:31:18 2021 IN: position startpos moves e2e4 f7f6 g1f3
+Sun Apr 11 14:31:18 2021 IN: go movetime 500
+Sun Apr 11 14:31:18 2021 time is up
+Sun Apr 11 14:31:18 2021 search for 0.500000 seconds
+Sun Apr 11 14:31:18 2021 rnbqkbnr/ppppp1pp/5p2/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2
+Sun Apr 11 14:31:18 2021 depth 1 score cp 22 time 1 nodes 1 pv c7c6 b1c3
+Sun Apr 11 14:31:18 2021 depth 2 score cp 22 time 1 nodes 2 pv c7c6 b1c3
+Sun Apr 11 14:31:18 2021 depth 3 score cp 26 time 57 nodes 337 pv c7c6 b1c3 g7g6
+Sun Apr 11 14:31:18 2021 depth 4 score cp 16 time 433 nodes 2361 pv c7c6 b1c3 g7g6 d2d4
+Sun Apr 11 14:31:18 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('e8f7'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Apr 11 14:31:18 2021 selected move: [16.25, Move.from_uci('c7c6'), 4, 0.43292665481567383]
+Sun Apr 11 14:31:18 2021 nps: 5444.764057, nodes: 2361, tt_hits: 26.450116%, avg bco index: 1.08
+Sun Apr 11 14:31:18 2021 time is up
+Sun Apr 11 14:31:18 2021 OUT: bestmove c7c6
+Sun Apr 11 14:31:19 2021 IN: position startpos moves e2e4 f7f6 g1f3 c7c6 f1c4
+Sun Apr 11 14:31:19 2021 IN: go movetime 500
+Sun Apr 11 14:31:19 2021 time is up
+Sun Apr 11 14:31:19 2021 search for 0.500000 seconds
+Sun Apr 11 14:31:19 2021 rnbqkbnr/pp1pp1pp/2p2p2/8/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 1 3
+Sun Apr 11 14:31:19 2021 depth 1 score cp 27 time 8 nodes 38 pv g8h6
+Sun Apr 11 14:31:19 2021 depth 2 score cp 25 time 68 nodes 361 pv b7b5 c4g8
+Sun Apr 11 14:31:19 2021 depth 3 score cp 25 time 118 nodes 643 pv b7b5 c4g8 h8g8
+Sun Apr 11 14:31:19 2021 depth 4 score cp 25 time 267 nodes 1461 pv d7d5 e4d5 b7b5 c4b3
+Sun Apr 11 14:31:19 2021 valid moves: [Move.from_uci('g8h6'), Move.from_uci('d8c7'), Move.from_uci('d8b6'), Move.from_uci('d8a5'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('f6f5'), Move.from_uci('c6c5'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('b7b5'), Move.from_uci('a7a5')]
+Sun Apr 11 14:31:19 2021 selected move: [25.0, Move.from_uci('d7d5'), 4, 0.2661006450653076]
+Sun Apr 11 14:31:19 2021 nps: 5475.416556, nodes: 1461, tt_hits: 20.224719%, avg bco index: 0.18
+Sun Apr 11 14:31:19 2021 time is up
+Sun Apr 11 14:31:19 2021 OUT: bestmove d7d5
+Sun Apr 11 14:31:33 2021 time is up
+Sun Apr 11 14:31:39 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:31:39 2021 stdin thread started
+Sun Apr 11 14:31:39 2021 IN: uci
+Sun Apr 11 14:31:39 2021 OUT: id name Feeks
+Sun Apr 11 14:31:39 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:31:39 2021 OUT: uciok
+Sun Apr 11 14:32:42 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:32:42 2021 stdin thread started
+Sun Apr 11 14:32:42 2021 IN: uci
+Sun Apr 11 14:32:42 2021 OUT: id name Feeks
+Sun Apr 11 14:32:42 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:32:42 2021 OUT: uciok
+Sun Apr 11 14:35:34 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:35:34 2021 stdin thread started
+Sun Apr 11 14:35:34 2021 IN: uci
+Sun Apr 11 14:35:34 2021 OUT: id name Feeks
+Sun Apr 11 14:35:34 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:35:34 2021 OUT: uciok
+Sun Apr 11 14:35:59 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:35:59 2021 stdin thread started
+Sun Apr 11 14:35:59 2021 IN: uci
+Sun Apr 11 14:35:59 2021 OUT: id name Feeks
+Sun Apr 11 14:35:59 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:35:59 2021 OUT: uciok
+Sun Apr 11 14:36:42 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:36:42 2021 stdin thread started
+Sun Apr 11 14:36:42 2021 IN: uci
+Sun Apr 11 14:36:42 2021 OUT: id name Feeks
+Sun Apr 11 14:36:42 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:36:42 2021 OUT: uciok
+Sun Apr 11 14:37:27 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:37:27 2021 stdin thread started
+Sun Apr 11 14:37:27 2021 IN: uci
+Sun Apr 11 14:37:27 2021 OUT: id name Feeks
+Sun Apr 11 14:37:27 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:37:27 2021 OUT: uciok
+Sun Apr 11 14:38:16 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:38:16 2021 stdin thread started
+Sun Apr 11 14:38:16 2021 IN: uci
+Sun Apr 11 14:38:16 2021 OUT: id name Feeks
+Sun Apr 11 14:38:16 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:38:16 2021 OUT: uciok
+Sun Apr 11 14:38:51 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:38:51 2021 stdin thread started
+Sun Apr 11 14:38:51 2021 IN: uci
+Sun Apr 11 14:38:51 2021 OUT: id name Feeks
+Sun Apr 11 14:38:51 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:38:51 2021 OUT: uciok
+Sun Apr 11 14:39:41 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:39:41 2021 stdin thread started
+Sun Apr 11 14:39:41 2021 IN: uci
+Sun Apr 11 14:39:41 2021 OUT: id name Feeks
+Sun Apr 11 14:39:41 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:39:41 2021 OUT: uciok
+Sun Apr 11 14:41:12 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:41:12 2021 stdin thread started
+Sun Apr 11 14:41:12 2021 IN: uci
+Sun Apr 11 14:41:12 2021 OUT: id name Feeks
+Sun Apr 11 14:41:12 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:41:12 2021 OUT: uciok
+Sun Apr 11 14:41:33 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:41:33 2021 stdin thread started
+Sun Apr 11 14:41:33 2021 IN: uci
+Sun Apr 11 14:41:33 2021 OUT: id name Feeks
+Sun Apr 11 14:41:33 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:41:33 2021 OUT: uciok
+Sun Apr 11 14:42:53 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:42:53 2021 stdin thread started
+Sun Apr 11 14:42:53 2021 IN: uci
+Sun Apr 11 14:42:53 2021 OUT: id name Feeks
+Sun Apr 11 14:42:53 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:42:53 2021 OUT: uciok
+Sun Apr 11 14:43:09 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:43:09 2021 stdin thread started
+Sun Apr 11 14:43:09 2021 IN: uci
+Sun Apr 11 14:43:09 2021 OUT: id name Feeks
+Sun Apr 11 14:43:09 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:43:09 2021 OUT: uciok
+Sun Apr 11 14:43:57 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:43:57 2021 stdin thread started
+Sun Apr 11 14:43:57 2021 IN: uci
+Sun Apr 11 14:43:57 2021 OUT: id name Feeks
+Sun Apr 11 14:43:57 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:43:57 2021 OUT: uciok
+Sun Apr 11 14:45:28 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:45:28 2021 stdin thread started
+Sun Apr 11 14:45:28 2021 IN: uci
+Sun Apr 11 14:45:28 2021 OUT: id name Feeks
+Sun Apr 11 14:45:28 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:45:28 2021 OUT: uciok
+Sun Apr 11 14:46:26 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:46:26 2021 stdin thread started
+Sun Apr 11 14:46:27 2021 IN: uci
+Sun Apr 11 14:46:27 2021 OUT: id name Feeks
+Sun Apr 11 14:46:27 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:46:27 2021 OUT: uciok
+Sun Apr 11 14:47:34 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:47:34 2021 stdin thread started
+Sun Apr 11 14:47:34 2021 IN: uci
+Sun Apr 11 14:47:34 2021 OUT: id name Feeks
+Sun Apr 11 14:47:34 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:47:34 2021 OUT: uciok
+Sun Apr 11 14:49:03 2021 stdin thread started
+Sun Apr 11 14:49:03 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:49:03 2021 IN: uci
+Sun Apr 11 14:49:03 2021 OUT: id name Feeks
+Sun Apr 11 14:49:03 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:49:03 2021 OUT: uciok
+Sun Apr 11 14:49:45 2021 stdin thread started
+Sun Apr 11 14:49:45 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:49:45 2021 IN: uci
+Sun Apr 11 14:49:45 2021 OUT: id name Feeks
+Sun Apr 11 14:49:45 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:49:45 2021 OUT: uciok
+Sun Apr 11 14:51:58 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:51:58 2021 stdin thread started
+Sun Apr 11 14:51:58 2021 IN: uci
+Sun Apr 11 14:51:58 2021 OUT: id name Feeks
+Sun Apr 11 14:51:58 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:51:58 2021 OUT: uciok
+Sun Apr 11 14:53:16 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:53:16 2021 stdin thread started
+Sun Apr 11 14:53:16 2021 IN: uci
+Sun Apr 11 14:53:16 2021 OUT: id name Feeks
+Sun Apr 11 14:53:16 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:53:16 2021 OUT: uciok
+Sun Apr 11 14:54:35 2021 stdin thread started
+Sun Apr 11 14:54:35 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:54:35 2021 IN: uci
+Sun Apr 11 14:54:35 2021 OUT: id name Feeks
+Sun Apr 11 14:54:35 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:54:35 2021 OUT: uciok
+Sun Apr 11 14:56:34 2021 stdin thread started
+Sun Apr 11 14:56:34 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:56:34 2021 IN: uci
+Sun Apr 11 14:56:34 2021 OUT: id name Feeks
+Sun Apr 11 14:56:34 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:56:34 2021 OUT: uciok
+Sun Apr 11 14:56:56 2021 IN: quit
+Sun Apr 11 14:57:14 2021 Set TT size to 8192 entries 
+Sun Apr 11 14:57:14 2021 stdin thread started
+Sun Apr 11 14:57:14 2021 IN: uci
+Sun Apr 11 14:57:14 2021 OUT: id name Feeks
+Sun Apr 11 14:57:14 2021 OUT: id author Folkert van Heusden <mail@vanheusden.com>
+Sun Apr 11 14:57:14 2021 OUT: uciok
+Sun Apr 11 14:57:36 2021 IN: quit
