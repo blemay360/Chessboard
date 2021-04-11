@@ -1208,6 +1208,8 @@ def setup():
         #Set square size to 40 pixels
         #square_size = 40
         square_size = 80
+        #Set up camera
+        camera = setup_camera()
     else:
         #Set square size to 70 pixels
         square_size = 70
@@ -1244,8 +1246,6 @@ def process_game():
     #[# of white pieces on board, # of black pieces on board, 0=black just moved | 1=white just moved]
     
     if pi:
-        #Set up camera
-        camera = setup_camera()
         #Take an image from the camera
         input_image = pi_take_image(camera)
         #Rotate image 180 degrees to correct for camera flip
