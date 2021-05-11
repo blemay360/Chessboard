@@ -1,10 +1,12 @@
 #Variables to change stuff on a high level
 #Whether to display any extra info windows
-display = [False, False, False, False] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
+display = [True, True, True, True] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
-wait = 1
+wait = 0
 #Whether to play against a computer
-vs_comp = True
+vs_comp = False
+#Whether to process frames from a video and save output
+process_video=True
 #File directory to get images from
 image_directory = 'TestingImages/Debugging/'
 
@@ -1255,6 +1257,22 @@ def process_game():
         #Rotate image 180 degrees to correct for camera flip
         #input_image = imutils.rotate(input_image, 180)
         cv2.imwrite("TestingImages/Debugging/"+ time.ctime(time.time()) + ".jpg", input_image)
+    elif process_video:
+        print("Processing video")
+        # Create a VideoCapture object and read from input file
+        cap = cv2.VideoCapture('ScholarsMate.h264')
+        
+        # Check if camera opened successfully
+        if (cap.isOpened() == False):
+            print("Error opening video stream or file")
+            
+        ret, frame = cap.read()
+        
+        if ret == True:
+            # Display the resulting frame
+            cv2.imshow('Frame',frame)
+            
+            input_image = frame
     else:
         files = os.listdir(image_directory)
         files.sort()
