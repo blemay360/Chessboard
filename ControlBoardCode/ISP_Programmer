@@ -1,0 +1,7 @@
+avrdude -c programmer -B 32 -p chip -U flash:w:fline.ino.hex:i
+
+USBTiny: usbtiny
+Atmel AVRISP MkII: avrisp2
+
+ATmega328p: m328p
+ATmega32u4: m32u4
