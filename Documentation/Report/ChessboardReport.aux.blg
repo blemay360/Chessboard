@@ -1,0 +1,5 @@
+[0] Config.pm:304> INFO - This is Biber 2.14 (beta)
+[0] Config.pm:307> INFO - Logfile is 'ChessboardReport.aux.blg'
+[77] biber:322> INFO - === Mon May 10, 2021, 12:21:07
+[106] Utils.pm:309> ERROR - Cannot find 'ChessboardReport.aux.bcf'!
+[106] Biber.pm:132> INFO - ERRORS: 1

@@ -1,6 +1,6 @@
 #Variables to change stuff on a high level
 #Whether to display any extra info windows
-display = [False, False, False, False] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
+display = [True, True, True, True] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
 wait = 1
 #Whether to play against a computer
@@ -745,6 +745,7 @@ def knot_detection(image, border_template, detections):
             show_images("resize", ("Edges", cv2.addWeighted(image, 1, output, 1, 0)))
             #show_images("resize", ("Edges", edges_blurred))
             #Wait for keypress
+            cv2.imwrite("TestingImages/OutputImages/KnotDetection"+ time.ctime(time.time()) + ".jpg", cv2.addWeighted(image, 1, output, 1, 0))
             cv2.waitKey(1)
         
         #If there were no blocked edges return true
@@ -1264,6 +1265,7 @@ def process_game():
     if display[0]:
         #Show the input image
         show_images('resize', ("Input Image", input_image))
+        cv2.imwrite("TestingImages/OutputImages/Input"+ time.ctime(time.time()) + ".jpg", input_image)
         cv2.waitKey(1)
         
     #Save the color array as old to compare with the second frame later
@@ -1272,9 +1274,11 @@ def process_game():
     if display[1]:
         #Show the grayscale color detection image and piece detection image
         show_images('resize', ('Color Values', color_detection))
+        cv2.imwrite("TestingImages/OutputImages/ColorDetection"+ time.ctime(time.time()) + ".jpg", color_detection)
     if display[2]:
         #Show the grayscale color detection image and piece detection image
         show_images('resize', ('Piece Detection', piece_detection))
+        cv2.imwrite("TestingImages/OutputImages/PieceDetection"+ time.ctime(time.time()) + ".jpg", piece_detection)
         
     if wait == 0:
         #Wait for a keypress while updating the chessboard gui
