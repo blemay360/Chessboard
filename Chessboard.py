@@ -1,6 +1,6 @@
 #Variables to change stuff on a high level
 #Whether to display any extra info windows
-display = [True, True, True, True] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
+display = [False, False, False, False] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
 wait = 1
 #Whether to play against a computer
