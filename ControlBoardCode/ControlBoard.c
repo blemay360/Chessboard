@@ -213,7 +213,7 @@ int main()
 {
     //Set direction registers
     DDRC |= (1 << DDC1) | (1 << DDC3);    // Make pin PC1 and PC3 be outputs
-    DDRD |= (1 << DDD7);    // Make pin PD7 be an output
+    DDRD |= (1 << DDD1) | (1 << DDD7);    // Make pin PD1 and PD7 be an output
     
     PORTC |= (1 << PORTC3);   // Set PC3 high
     
