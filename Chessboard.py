@@ -1,8 +1,8 @@
 #Variables to change stuff on a high level
 #Whether to display any extra info windows
-display = [True, True, True, True] #[0, 1, 2, 3] 0 displays input frame 1 displays piece edge detection, 2 displays color detection, 3 displays knot detection
+display = [True, True, True, True, True] #[0, 1, 2, 3, 4] 0 displays input frame 1 displays  apriltag detection, 2 displays knot detection, 3 displays piece edge detection, 4 displays color
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
-wait = 0
+wait = 1
 #Whether to play against a computer
 vs_comp = False
 #Whether to process frames from a video and save output
@@ -148,7 +148,7 @@ def detect_apriltags(family, image, previous_detections=False):
                 ##Wait for a keypress
                 #cv2.waitKey(wait)
                 #Return empty list
-                return []
+                return detections, False
         #If there are extra apriltags detected with duplicate ids
         elif (len(detections) > 4):
             #print("Detected Extra Apriltag")
@@ -163,10 +163,10 @@ def detect_apriltags(family, image, previous_detections=False):
             #Replace the previous detection tuple by the modified one
             detections = tuple(pruned_detection_list)
     elif (any(map(lambda ele: ele is None, detections))):
-        print("Lost some stuff")
+        return detections, False
     
     #Return variable with detected apriltag info
-    return detections
+    return detections, True
 
 def return_tag_info(detections, tag_id, info='center'):
     '''
@@ -406,7 +406,8 @@ def get_detection_color_array(image, turn_background, first_frame=False):
     #Make a copy of the input image to modify to show detection
     detection_image = copy.copy(image)
     color_image = cv2.cvtColor(copy.copy(image), cv2.COLOR_BGR2HSV)
-    color_image = np.stack((color_image[:,:,0],) * 3, axis=-1)
+    #color_image = copy.copy(image)
+    color_image = np.stack((color_image[:,:,0],) *3, axis=-1)
      
     #Rectangle color for empty squares
     empty_color = (0, 0, 0)
@@ -426,7 +427,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
         #Thickness of text to add to image
         text_thickness = 4
         #Thickness of lines to draw on image
-        line_thickness = 6
+        line_thickness = 3
     
     #Size of the input image, assumed to be a square because the input image should be perspective shifted
     size = detection_image.shape[0]
@@ -489,7 +490,7 @@ def get_detection_color_array(image, turn_background, first_frame=False):
 
     if first_frame:
         #Set new edge_count_threshold to be smaller than the lowest edge count of an occupied square
-        edge_count_threshold = int(min(occupied_edge_count) * 0.1)
+        edge_count_threshold = int(min(occupied_edge_count) * 0.4)
     
     if (np.count_nonzero(detection_array) > (turn_background[0] + turn_background[1]) or np.count_nonzero(detection_array) < (turn_background[0] + turn_background[1] - 1)):
         if (first_frame):
@@ -592,11 +593,12 @@ def piece_detection(image):
     return edges, edge_count, x_average, y_average, std
 
 def average_color(image, x, y, radius):
-    #5 1s, 6 2s, 3 3s, 2 4s, 1 5, 0 6s, 1 7
     '''
     Function to average the hue of a hsv image
     Takes in a hsv image and returns an average of the nonzero hues inside a given circle
     '''
+    #show_images('resize', ("Input Image", image))
+    #cv2.waitKey(0)
     #Create an empty mask the size of the input image
     mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
     #Place a white circle on the mask with the given dimensions
@@ -610,7 +612,9 @@ def average_color(image, x, y, radius):
     #Find standard deviation of the hue of the piece
     std = np.std(np.ravel(color_measure[np.nonzero(mask)]))
     #Add the lowest value of the array to the average in order to correct for glare
-    offset_average = average - std
+    if (average < 130) and (average > 90):
+        average = 0
+    offset_average = average + std
     
     return color_measure, offset_average
 
@@ -742,23 +746,25 @@ def knot_detection(image, border_template, detections):
         #Stack the blocked edges, edges, and blurred edges to all display in the same image
         output = np.stack((template // 4, edges_blurred // 4, blocked_edges // 2), axis=-1)
         
+        edge_knots = cv2.addWeighted(image, 1, output, 1, 0)
+        '''
         if display[3]:
             #Show calculated results over the image
-            show_images("resize", ("Edges", cv2.addWeighted(image, 1, output, 1, 0)))
+            show_images("resize", ("Edges", edge_knots))
             #show_images("resize", ("Edges", edges_blurred))
             #Wait for keypress
             cv2.imwrite("TestingImages/OutputImages/KnotDetection"+ time.ctime(time.time()) + ".jpg", cv2.addWeighted(image, 1, output, 1, 0))
             cv2.waitKey(1)
-        
+        '''
         #If there were no blocked edges return true
         if not np.count_nonzero(blocked_edges):
-            return True
+            return True, edge_knots
         #Else return false
         else:
-            return False
+            return False, edge_knots
     #If there was an apriltag corner missing, return false
     else:
-        return False
+        return False, edge_knots
     
 #-----------------------------------------IMAGE DETECTION MAIN
 def process_frame(frame, border_template, turn_background, first_frame, previous_detections=False):
@@ -772,28 +778,53 @@ def process_frame(frame, border_template, turn_background, first_frame, previous
     
     if first_frame:
         #Run apriltag detection on whole image
-        detections = detect_apriltags(tag_family, frame)
+        detections, valid_frame = detect_apriltags(tag_family, frame)
     else:
         #Run apriltag detection, focusing on the area where the tags were last seen
-        detections = detect_apriltags(tag_family, frame, previous_detections)
+        detections, valid_frame = detect_apriltags(tag_family, frame, previous_detections)
     
-    #Make copies of original image to keep the same for display 
-    apriltagCorners, shifted, color_detection, piece_detection = copy_image(frame, 4)            
-
+    #Make blank images in case frame isn't valid, then blank images are shown instead of processed frames
+    edge_knots = np.zeros((frame.shape[0], frame.shape[0], 3), dtype=np.uint8)
+    color_detection = np.zeros((frame.shape[0], frame.shape[0], 3), dtype=np.uint8)
+    piece_detection = np.zeros((frame.shape[0], frame.shape[0], 3), dtype=np.uint8)
+    
+    #Find center position of frame (not actually center, offset to fit "Missing Apriltag Detection" in center)
+    frame_center = (int(frame.shape[0] // 6), int(frame.shape[0] // 2))
+    
+    #Add text to display when a tag is missing from the detected group
+    cv2.putText(edge_knots, "Missing Apriltag Detection", frame_center, cv2.FONT_HERSHEY_COMPLEX, 1.1, (255, 255, 255), 3)
+    cv2.putText(color_detection, "Missing Apriltag Detection", frame_center, cv2.FONT_HERSHEY_COMPLEX, 1.1, (255, 255, 255), 3)
+    cv2.putText(piece_detection, "Missing Apriltag Detection", frame_center, cv2.FONT_HERSHEY_COMPLEX, 1.1, (255, 255, 255), 3)
+    
+    #Place rectangles on each apriltag
+    apriltag_rect = copy.copy(frame)
+    for i in range(len(detections)):
+        apriltag_rect = cv2.polylines(apriltag_rect, [np.round(detections[i]['lb-rb-rt-lt']).astype(int)], True, (255, 0, 0), 2)
+        cv2.putText(apriltag_rect, str(detections[i]['id']), (np.round(detections[i]['center']).astype(int)[0] - 8,np.round(detections[i]['center']).astype(int)[1] + 8) , cv2.FONT_HERSHEY_COMPLEX, 0.75, (255, 255, 255), 4)
+        
+    apriltag_rect = apriltag_rect[0:apriltag_rect.shape[0], 128:896]
+    
     #If 4 apriltags are seen (one in each 4 corners of chessboard), crop image and run detection functions
-    if detections and valid_frame:        
-        #Place circles on inside corners of each apriltag
-        #circle_image(apriltagCorners, grab_inside_corners(detections), 'red', 'picture')
-        #show_images('resize', ('Apriltag Corners', apriltagCorners))
-        #cv2.waitKey(wait)
-                
-        if not knot_detection(frame, border_template, detections):
-            #print("Gold border not clear")
+    if detections and valid_frame:
+        edge_clear, edge_knots = knot_detection(frame, border_template, detections)
+        
+        if not edge_clear:
+            #print("Border not clear")
             valid_frame = False
             color_array = np.zeros((8, 8), dtype=int)
-        else:            
+            
+            #Overwrite piece and color detection images to put new message
+            color_detection = np.zeros((frame.shape[0], frame.shape[0], 3), dtype=np.uint8)
+            piece_detection = np.zeros((frame.shape[0], frame.shape[0], 3), dtype=np.uint8)
+            
+            frame_center = (int(frame.shape[0] // 7), int(frame.shape[0] // 2))
+            
+            #Put new message in piece and color detection images for when border is not clear
+            cv2.putText(color_detection, "Border Design is Obstructed", frame_center, cv2.FONT_HERSHEY_COMPLEX, 1.1, (255, 255, 255), 3)
+            cv2.putText(piece_detection, "Border Design is Obstructed", frame_center, cv2.FONT_HERSHEY_COMPLEX, 1.1, (255, 255, 255), 3)
+        else:
             #Shift perspective to make to make the inside corners of the apriltags the corners of the image
-            shifted = perspective_shift(shifted, grab_inside_corners(detections))
+            shifted = perspective_shift(copy.copy(frame), grab_inside_corners(detections))
             
             #Go through each square of the chessboard to tell if square is populated with piece and measure piece color
             piece_detection, detection_array, color_detection, color_array = get_detection_color_array(shifted, turn_background, first_frame)
@@ -806,7 +837,7 @@ def process_frame(frame, border_template, turn_background, first_frame, previous
         valid_frame = False
         color_array = np.zeros((8, 8), dtype=int)
     
-    return valid_frame, detections, color_array, piece_detection, color_detection
+    return valid_frame, detections, color_array, apriltag_rect, edge_knots, piece_detection, color_detection
 
 #-----------------------------------------CHESS MOVE FUNCTIONS
 def create_board_array():
@@ -1269,10 +1300,8 @@ def process_game():
         ret, frame = cap.read()
         
         if ret == True:
-            # Display the resulting frame
-            cv2.imshow('Frame',frame)
-            
             input_image = frame
+            input_image = imutils.rotate(input_image, 270)
     else:
         files = os.listdir(image_directory)
         files.sort()
@@ -1283,20 +1312,28 @@ def process_game():
     if display[0]:
         #Show the input image
         show_images('resize', ("Input Image", input_image))
-        cv2.imwrite("TestingImages/OutputImages/Input"+ time.ctime(time.time()) + ".jpg", input_image)
+        cv2.imwrite("TestingImages/PresentationImages/InputImage0.jpg", input_image)
         cv2.waitKey(1)
         
     #Save the color array as old to compare with the second frame later
-    valid_frame, previous_detections, old_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, True)
+    valid_frame, previous_detections, old_color_array, apriltag_rect, edge_knots, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, True)
     
     if display[1]:
         #Show the grayscale color detection image and piece detection image
-        show_images('resize', ('Color Values', color_detection))
-        cv2.imwrite("TestingImages/OutputImages/ColorDetection"+ time.ctime(time.time()) + ".jpg", color_detection)
+        show_images('resize', ('Apriltag Location', apriltag_rect))
+        cv2.imwrite("TestingImages/PresentationImages/ApriltagRect0.jpg", apriltag_rect)
     if display[2]:
-        #Show the grayscale color detection image and piece detection image
+        #Show the knot detection image
+        show_images('resize', ('Knot Detection', edge_knots))
+        cv2.imwrite("TestingImages/PresentationImages/EdgeKnots0.jpg", edge_knots)
+    if display[3]:
+        #Show the piece detection image
         show_images('resize', ('Piece Detection', piece_detection))
-        cv2.imwrite("TestingImages/OutputImages/PieceDetection"+ time.ctime(time.time()) + ".jpg", piece_detection)
+        cv2.imwrite("TestingImages/PresentationImages/PieceDetection0.jpg", piece_detection)
+    if display[4]:
+        #Show the grayscale color detection image and piece detection image
+        show_images('resize', ('Color Values', color_detection))
+        cv2.imwrite("TestingImages/PresentationImages/ColorDetection0.jpg", color_detection)
         
     if wait == 0:
         #Wait for a keypress while updating the chessboard gui
@@ -1319,7 +1356,7 @@ def process_game():
     result = False    
     
     #If running from files, calculate the number of files to run
-    if not pi:
+    if not pi and not process_video:
         #max_file_count = max([int(i.split('.')[0]) for i in os.listdir(image_directory) if i.split('.')[0].isdigit()]) + 1;
         max_file_count = len(os.listdir(image_directory))
     else:
@@ -1343,6 +1380,17 @@ def process_game():
             input_image = pi_take_image(camera)
             #input_image = imutils.rotate(input_image, 180)
             cv2.imwrite("TestingImages/Debugging/" + time.ctime(time.time()) + ".jpg", input_image)
+        elif process_video:
+            ret, frame = cap.read()
+            
+            if ret == True:
+                input_image = frame
+                input_image = imutils.rotate(input_image, 270)
+            else:
+                #Stop running the program
+                print("Reached end of video")
+                run = False
+                break
         else:
             input_image = cv2.imread(image_directory + files[file_counter])
         
@@ -1353,17 +1401,28 @@ def process_game():
             #wait = 0
         
         #Process the current frame
-        valid_frame, previous_detections, new_color_array, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, False, previous_detections)
+        valid_frame, previous_detections, new_color_array, apriltag_rect, edge_knots, piece_detection, color_detection = process_frame(input_image, border_template, turn_background, False, previous_detections)
         
         if display[0]:
-            #Show the input image
-            show_images('resize', ("Input Image", input_image))
+            #Show the grayscale color detection image and piece detection image
+            show_images('resize', ('Input Image', input_image))
+            cv2.imwrite("TestingImages/PresentationImages/InputImage" + str(file_counter) + ".jpg", input_image)
         if display[1]:
             #Show the grayscale color detection image and piece detection image
-            show_images('resize', ('Color Values', piece_detection))
+            show_images('resize', ('Apriltag Location', apriltag_rect))
+            cv2.imwrite("TestingImages/PresentationImages/ApriltagRect" + str(file_counter) + ".jpg", apriltag_rect)
         if display[2]:
+            #Show the knot detection image
+            show_images('resize', ('Knot Detection', edge_knots))
+            cv2.imwrite("TestingImages/PresentationImages/EdgeKnots" + str(file_counter) + ".jpg", edge_knots)
+        if display[3]:
+            #Show the piece detection image
+            show_images('resize', ('Piece Detection', piece_detection))
+            cv2.imwrite("TestingImages/PresentationImages/PieceDetection" + str(file_counter) + ".jpg", piece_detection)
+        if display[4]:
             #Show the grayscale color detection image and piece detection image
-            show_images('resize', ('Piece Detection', color_detection))
+            show_images('resize', ('Color Values', color_detection))
+            cv2.imwrite("TestingImages/PresentationImages/ColorDetection" + str(file_counter) + ".jpg", color_detection)
         cv2.waitKey(wait)
         
         #If the frame isn't valid, restart from the beginning of the loop
@@ -1422,7 +1481,7 @@ def process_game():
         old_color_array = new_color_array
         
         #Print the move that was made and the time it took to process the frame
-        #print(move, time.time() - start)
+        print(move, time.time() - start)
         
         #If there is a check on the board
         if board.is_check():
