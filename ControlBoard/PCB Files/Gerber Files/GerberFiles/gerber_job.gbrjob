@@ -1,0 +1,24 @@
+{
+    "Header": {
+        "Comment": "All values are metric (mm)",
+        "CreationDate": "2021-04-18T16:25:47Z",
+        "GenerationSoftware": {
+            "Application": "EAGLE",
+            "Vendor": "Autodesk",
+            "Version": "9.6.2"
+        },
+        "Part": "Single"
+    },
+    "Overall": {
+        "BoardThickness": 0.22,
+        "LayerNumber": 2,
+        "Name": {
+            "ProjectId": "Control_displayUnattached"
+        },
+        "Owner": "Brandon LeMay <bl2448@nyu.edu>",
+        "Size": {
+            "X": 85.532913,
+            "Y": 63
+        }
+    }
+}

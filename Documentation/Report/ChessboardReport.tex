@@ -156,19 +156,94 @@ A variety of manufacturing methods were used to create the physical chessboard, 
 \vspace{12pt}
 
 \subsubsection{PCB Milling}
+A custom PCB was designed using EAGLE. The purpose of this circuit board is to provide a user interface that doesn't require a mouse or keyboard. A number of inputs were added to this PCB to communicate with the Raspberry Pi, including 5 buttons: 1 to start or pause a chess match, 1 to stop an ongoing match, 1 to toggle whether the user plays as white or black, 1 button for requesting a hint from a chess engine, and 1 button for offering a draw.
 
+Figure \ref{PCB} shows the board design, the PCB has 2 copper layers, the red traces show the top layer, and blue denotes the bottom layer. Keen observers will note there is blue in the image than there is red, the bottom layer has a ground plane, so any "extra" copper not used for traces is connected to 0V.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=\linewidth]{Images/ControlBoardDesign.png}
+	\caption{Full Layer Stack of Control Board}
+	\label{PCB}
+\end{figure}
+
+Also included are 6 controllable LEDs: 1 displays whether the user is playing as white or black, and the other 5 for signaling errors.
+There is also another LED that automatially powers on when the circuit board is powered, this provides an easy way for the user to tell when the chessboard is powered.
+
+To switch between the user playing another person and playing a computer, as well as selecting the skill of the computer, a potentiometer was added to the control board. The potentiometer has a detent in the middle of rotation, potentiometer positions to the counter-clockwise of the detent are for the user playing another human, with the position determining the skill of the chess engine providing hints. When the potentiometer is positioned on the detent, the chess engine is disabled and only move tracking is enabled for a more natural playing experience. When the potentiometer is positioned clockwise of the detent, the user plays against a chess engine, the rating of which is detemined by how clockwise the position is, more clockwise positions increase the skill of the chess engine.
+
+Directly above the potentiometer is a 7-segment display that shows the rating of the chess engine, detemined by the potentiometer position. During gameplay, the display shows the move selected by the chess engine.
+
+Lastly, three connectors are included on the board, one to power and control the LED ring around the camera that lights the chessboard, one to interface with the Raspberry Pi, and one to enable programming of the microcontroller on the PCB.
+
+%\begin{figure}[!ht]
+%	\centering
+%	\includegraphics[width=\linewidth]{Images/ControlSchematicDesign.png}
+%	\caption{Full Layer Stack of PCB}
+%	\label{render}
+%\end{figure}
+
+To manufacture the circuit board, Gerber files were generated from the EAGLE design, which were then cut on an LPKF circuit board milling machine. A brass solder stencil was milled on an Othermill, and then used to apply solder paste to the pads of all the surface mounted devices (SMD). The SMD components were then placed on the board with tweezers, and the assembly was placed in a reflow oven to solder all SMD joints at once. Lastly, the remaining through-hole mounted (THM) components were placed and soldered by hand.
+
+To program the ATMega328p on the circuit board that reads inputs from the buttons and potentiometers, communicates with the Raspberry Pi, and sets the display of the 7-segment display and LED ring, an AVR programmer was used. The code was written in C, compiled with avr-gcc, and written to the microcontroller using avrdude and a USBTiny ISP programmer
 
 \vspace{12pt}
 
 \subsubsection{3D Printing}
+To compactly mount the Raspberry Pi, control PCB, and touchscreen display, and have user oriented components angled towards the user, exotic geometry was required. To easily fabricate these complex shapes, a Prusa MK3S FFM 3D printer was used.
+
+Two important parts of the chessboard were 3D printed: the chessboard base that holds all the chess pieces when not in use and the chessboard sits on top of, and which the Raspberry Pi, control PCB, and touchscreen display all mount on. This base can be seen in Figure \ref{BoardMount}. 
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=\linewidth]{Images/BoardMount.png}
+	\caption{Chessboard Base}
+	\label{BoardMount}
+\end{figure}
+
+In addition, the LED light ring used to illuminate the chessboard is mounted to a 3D printed part that suspends it just below the camera to prevent it from blocking the cameras view while giving the light an unobstructed path to light up the chessboard. This standoff can be seen in Figure \ref{LEDMount}. 
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=\linewidth]{Images/LEDMount.png}
+	\caption{LED Ring Light Mount}
+	\label{LEDMount}
+\end{figure}
+
+The arms stretching above the circle set the mount just below the camera, while cutouts in the circle allow for wires to be soldered to the back of the LED ring and easily routed.
 
 \vspace{12pt}
 
 \subsubsection{Laser Cutting}
 
+The wooden chessboard upon which the game is played was laser cut out of birch plywood, the interior of the board has the classic alternating pattern of colored squares that pieces are placed on, while the border of the board was reserved for image processing features. Apriltag fiducials were placed on each corner to assist in locating the chessboard in the frame of any image. Section \ref{ApriltagDetection} gives more information on this process. In between each tag, a Celtic knot pattern was placed, this design is used to tell when a user places their hand above the chessboard and obstructs the camera view. This feature is discussed more in Section \ref{ApriltagDetection}.
+
+Figures \ref{input} and \ref{KnotCrop} show the chessboard from the perspective of the Raspberry Pi camera.
+
 \vspace{12pt}
 
 \subsubsection{Sheet Metal Forming}
+To hold the camera above the chessboard, a crane was cut from aluminum sheet metal. Metal was used instead of plastic because the part was easily manufactured from flat panels, and provides more strength and rigidity, which is important to minimize blurring in images of the chessboard from the camera bouncing and flexing at the edge of the crane.
+
+To make this part, the pattern shown in Figure \ref{CraneFlat} was cut on a waterjet cutter.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=\linewidth]{Images/CameraCraneFlat.png}
+	\caption{Sheet Metal Crane Flat Pattern}
+	\label{CraneFlat}
+\end{figure}
+
+This part was then folded on a sheet metal brake to form the shape shown in Figure \ref{Crane}.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.7\linewidth]{Images/CameraCrane.png}
+	\caption{Folded Sheet Metal Camera Crane}
+	\label{Crane}
+\end{figure}
+
+This sheet metal crane fastens to the board mount shown in Figure \ref{BoardMount} using two large bolts, and the camera and LED ring mount onto the end of the crane using 4 M2.5 screws.
 
 \vspace{12pt}
 
@@ -197,6 +272,7 @@ Figure \ref{input} shows an example of an input image. All the pieces are in the
 \vspace{12pt}
 
 \subsubsection{Chessboard Localization}
+\label{ApriltagDetection}
 To determine where the chessboard is in the input frame, Apriltags were placed in each corner of the chessboard. Apriltags are a collection of unique two-dimensional patterns that can be easily detected using a camera, similar to a QR code, but much simpler in design to be easily recognized from a variety of distances [\cite{Wang2016}]. Each corner has an Apriltag with a different ID, which is recognizable by the computer when processing the image, thus the orientation of the chessboard can be kept constant.
 
 To detect the Apriltags in the image, the python Apriltag library was used.
@@ -212,6 +288,7 @@ This also means that it is easier for the Apriltag detection algorithm to return
 \vspace{12pt}
 
 \subsubsection{Obstruction Testing}
+\label{KnotDetection}
 
 Once all 4 tags have been detected, the outside corners of the tags are used to reorient the perspective of the image. To do this, the image is transformed such that the pixel location representing the outside corner of each tag becomes the new corner of the image. Since the tags are equally spaced in each corner, this means that the horizontal rows of the chessboard are horizontal in the image, and the vertical columns are also vertical in the image. The outside corners are used to reorient the image so that the pattern going around the edges of the chessboard is visible, as can be seen in Figure \ref{KnotCrop}. 
 
@@ -269,19 +346,27 @@ The perspective shifted image can be seen in Figure \ref{InsideCrop}.
 
 The squares that are examined to determine if the square on the chessboard is occupied by a piece are all slightly smaller than the area of the square on the chessboard to create a border at the edge of each square that isn't used for piece detection. This border allows for pieces to be poorly placed or overlapping other squares without affecting the piece detection of nearby squares.
 
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=\linewidth]{Images/Piece_zoomed.jpg}
-	\caption{Singular Piece}
-	\label{piece zoomed}
-\end{figure}
+Figure \ref{piece zoomed} shows an example square of a populated square.
 
 \begin{figure}[!ht]
 	\centering
-	\includegraphics[width=\linewidth]{Images/PieceDetection_zoomed.jpg}
-	\caption{Singular Piece Detection}
+	\includegraphics[width=\linewidth]{Images/KnotDetection340Zoomed.jpg}
+	\caption{Single Occupied Square}
+	\label{piece zoomed}
+\end{figure}
+
+The general idea to tell if a square is populated or not is to run Canny edge detection on the image of the square, then sum the number of edges detected. Figure \ref{piece detection zoomed} shows the result of Canny edge detection run on Figure \ref{piece zoomed}. The edge detection algorithm returns an array of ones and zeros, the zeros are shown as black pixels, and represent pixels from the original image that are not edges. The ones in the array are shown as white pixels, and represent pixels from the original image that are deemed edges.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=\linewidth]{Images/PieceDetection340Zoomed.jpg}
+	\caption{Single Square Piece Detection}
 	\label{piece detection zoomed}
 \end{figure}
+
+If the total edge count of a square is greater than a predetermined threshold, then the square is deemed to be populated. The comparison threshold is automatically set from the data gathered in the first frame taken by the program. It assumes that the pieces will be in the starting position, and uses the average number of edges detected in the front and back two rows, where all the pieces start, to determine the average edge count of a populated square. The comparison threshold is then set to half the average value to account for lighting differences that might result in a piece blending in better with the board and returning less edges then average.
+
+To help debug or diagnose errors, the program assembles all the single square images into the image shown in Figure \ref{piece detection}.
 
 \begin{figure}[!ht]
 	\centering
@@ -290,9 +375,18 @@ The squares that are examined to determine if the square on the chessboard is oc
 	\label{piece detection}
 \end{figure}
 
+All the single square images are superimposed on the board locations they were taken from, with a border added to show whether the square is occupied (the edge count of the square exceeds the comparison threshold) or not. White borders denote an occupied square, no borders denote an empty square.
+
 \vspace{12pt}
 
 \subsubsection{Color Detection}
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=\linewidth]{Images/ColorDetection340Zoomed.jpg}
+	\caption{Single Square Color Detection}
+	\label{color zoomed}
+\end{figure}
 
 \begin{figure}[!ht]
 	\centering

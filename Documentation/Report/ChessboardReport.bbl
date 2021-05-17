@@ -1,0 +1,82 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.1 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global}
+    \entry{Forsyth2002}{book}{}
+      \name{author}{2}{}{%
+        {{hash=acbec711f881b0f45e73a85fe168ffc0}{%
+           family={Forsyth},
+           familyi={F\bibinitperiod},
+           given={D.},
+           giveni={D\bibinitperiod}}}%
+        {{hash=c1b889f12624d5f02f8ebaea452b84e0}{%
+           family={Ponce},
+           familyi={P\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Prentice Hall}%
+      }
+      \strng{namehash}{b2a560e8e15a9ff5575b5c7f5f69be0a}
+      \strng{fullhash}{b2a560e8e15a9ff5575b5c7f5f69be0a}
+      \strng{bibnamehash}{b2a560e8e15a9ff5575b5c7f5f69be0a}
+      \strng{authorbibnamehash}{b2a560e8e15a9ff5575b5c7f5f69be0a}
+      \strng{authornamehash}{b2a560e8e15a9ff5575b5c7f5f69be0a}
+      \strng{authorfullhash}{b2a560e8e15a9ff5575b5c7f5f69be0a}
+      \field{sortinit}{F}
+      \field{sortinithash}{fb0c0faa89eb6abae8213bf60e6799ea}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Computer Vision: A Modern Approach}
+      \field{year}{2002}
+    \endentry
+    \entry{Wang2016}{article}{}
+      \name{author}{2}{}{%
+        {{hash=91b0ceddefe1df2be88f9c70c4507e4b}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={John},
+           giveni={J\bibinitperiod}}}%
+        {{hash=8f743eebb2f64f75592e54ba06f94320}{%
+           family={Olson},
+           familyi={O\bibinitperiod},
+           given={Edwin},
+           giveni={E\bibinitperiod}}}%
+      }
+      \strng{namehash}{8f9eb108db0b2c60537d5a530b64d28a}
+      \strng{fullhash}{8f9eb108db0b2c60537d5a530b64d28a}
+      \strng{bibnamehash}{8f9eb108db0b2c60537d5a530b64d28a}
+      \strng{authorbibnamehash}{8f9eb108db0b2c60537d5a530b64d28a}
+      \strng{authornamehash}{8f9eb108db0b2c60537d5a530b64d28a}
+      \strng{authorfullhash}{8f9eb108db0b2c60537d5a530b64d28a}
+      \field{sortinit}{W}
+      \field{sortinithash}{1af34bd8c148ffb32de1494636b49713}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)}
+      \field{month}{10}
+      \field{title}{AprilTag 2: Efficient and robust fiducial detection}
+      \field{year}{2016}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
