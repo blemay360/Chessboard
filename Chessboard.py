@@ -1,12 +1,12 @@
 #Variables to change stuff on a high level
 #Whether to display any extra info windows
-display = [True, True, True, True, True] #[0, 1, 2, 3, 4] 0 displays input frame 1 displays  apriltag detection, 2 displays knot detection, 3 displays piece edge detection, 4 displays color
+display = [False, False, False, False, True] #[0, 1, 2, 3, 4] 0 displays input frame 1 displays  apriltag detection, 2 displays knot detection, 3 displays piece edge detection, 4 displays color
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
 wait = 1
 #Whether to play against a computer
-vs_comp = False
+vs_comp = True
 #Whether to process frames from a video and save output
-process_video=True
+process_video=False
 #File directory to get images from
 image_directory = 'TestingImages/Debugging/'
 
