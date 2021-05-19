@@ -2,9 +2,9 @@
 #Whether to display any extra info windows
 display = [False, False, False, False, True] #[0, 1, 2, 3, 4] 0 displays input frame 1 displays  apriltag detection, 2 displays knot detection, 3 displays piece edge detection, 4 displays color
 #How long to pause in milliseconds after displaying an image. 0 waits until a key is pressed
-wait = 1
+wait = 0
 #Whether to play against a computer
-vs_comp = True
+vs_comp = False
 #Whether to process frames from a video and save output
 process_video=False
 #File directory to get images from
@@ -180,7 +180,7 @@ def return_tag_info(detections, tag_id, info='center'):
             index = tag
             
     if (index == None):
-        print("Error finding apriltag " + str(tag_id))
+        #print("Error finding apriltag " + str(tag_id))
         return (-1, -1)
     
     #If the info variable isn't there or is 'center'
@@ -612,9 +612,9 @@ def average_color(image, x, y, radius):
     #Find standard deviation of the hue of the piece
     std = np.std(np.ravel(color_measure[np.nonzero(mask)]))
     #Add the lowest value of the array to the average in order to correct for glare
-    if (average < 130) and (average > 90):
+    if (average < 130) and (average > 90) and False:
         average = 0
-    offset_average = average + std
+    offset_average = average - std
     
     return color_measure, offset_average
 
@@ -1063,32 +1063,35 @@ def color_array_to_uci(old_array, new_array, board):
         move[ min(new_array[np.nonzero(difference)][0], 1)] = square_names[np.nonzero(difference)][0]
         move[ min(new_array[np.nonzero(difference)][1], 1)] = square_names[np.nonzero(difference)][1]
         #If the piece came from the 7th rank and went to the 8th rank, or came from the 2nd rank and went to the 1st rank, check to see if it is a pawn that should be promoted
-        if (int(move[0][1]) == 7 and int(move[1][1]) == 8) or (int(move[0][1]) == 2 and int(move[1][1]) == 1):
-            #Get and split the current board fen notation into 8 strings for each rank
-            position = board.fen().split()[0].split('/')
-            #Set the x (file) notation to 0
-            x = 0
-            #If the piece being considered is at the back rank, it has to be a white pawn to be promoted
-            if (int(move[1][1]) == 8):
-                pawn = 'P'
-            #Else if the considered piece is at the front rank, it has to be a black pawn to be promoted
-            else:
-                pawn = 'p'
-            #For each character in the rank string
-            for character in position[8 - int(move[0][1])]:
-                #If the current character is a number, add that many to the x variable to skip the empty squares
-                if (character.isdigit()):
-                    x += int(character)
-                #If the character is not a number
+        if (len(move[0]) == 2) and (len(move[1]) == 2):
+            if (int(move[0][1]) == 7 and int(move[1][1]) == 8) or (int(move[0][1]) == 2 and int(move[1][1]) == 1):
+                #Get and split the current board fen notation into 8 strings for each rank
+                position = board.fen().split()[0].split('/')
+                #Set the x (file) notation to 0
+                x = 0
+                #If the piece being considered is at the back rank, it has to be a white pawn to be promoted
+                if (int(move[1][1]) == 8):
+                    pawn = 'P'
+                #Else if the considered piece is at the front rank, it has to be a black pawn to be promoted
                 else:
-                    #Check if the square it came from previously held a pawn
-                    if (files[x] == move[0][0] and character == pawn):
-                        #Default the promotion type to a queen
-                        modifier = 'q'
-                    #Add one to the x variable to move onto the next square
-                    x += 1
-        #Assemble the move in uci notation by joining the origin square with the destination square, and the type of piece it is promoted to if necessary
-        move = move[0] + move[1] + modifier
+                    pawn = 'p'
+                #For each character in the rank string
+                for character in position[8 - int(move[0][1])]:
+                    #If the current character is a number, add that many to the x variable to skip the empty squares
+                    if (character.isdigit()):
+                        x += int(character)
+                    #If the character is not a number
+                    else:
+                        #Check if the square it came from previously held a pawn
+                        if (files[x] == move[0][0] and character == pawn):
+                            #Default the promotion type to a queen
+                            modifier = 'q'
+                        #Add one to the x variable to move onto the next square
+                        x += 1
+            #Assemble the move in uci notation by joining the origin square with the destination square, and the type of piece it is promoted to if necessary
+            move = move[0] + move[1] + modifier
+        else:
+            move = 0
     #If 4 squares were changed, that signals that one of the sides castled
     elif (np.count_nonzero(difference) == 4):
         #If the castling happened in the front rank and the squares involved are on the right side of the board
@@ -1434,6 +1437,10 @@ def process_game():
         #Compare the color detection array of the current image with the last image to deterime the move that was made
         if not np.array_equal(old_color_array, new_color_array):
             move = color_array_to_uci(old_color_array, new_color_array, board)
+            if move == 0:
+                if not pi:
+                    file_counter += 1
+                continue
         else:
             if not pi:
                 file_counter += 1
