@@ -38,7 +38,7 @@
 % As a general rule, do not put math, special symbols or citations
 % in the abstract or keywords.
 \begin{abstract}
-The abstract goes here.
+A computer vision enable chessboard was built to track chess pieces throughout a chess match. External chess engines were used to suggest moves to the user, or play against a computer using a physical chessboard. The current chess position is reflected virtually on a touchscreen interface, with a custom PCB control board providing the interface for the user to manage execution of chess tracking program. The program can track an entire chess game successfully, as well as adapt the skill of the chess engine to suit the user's preference. This sets up a platform allowing a computer to physically play chess against a human by replicating the ability of a human to track changes in a chessboard, in addition to implementing object detection functions that can be applied to tracking objects of any known color and shape in known sections of an image.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -49,97 +49,28 @@ Chess, Computer Vision, OpenCV, Apriltag, Raspberry Pi.
 \section{Introduction}
 \IEEEPARstart{C}{hessboards} as the subject of computer vision experiments are certainly nothing new. Blank chessboards are widely studied in computer vision both as methods to calibrate cameras, as chessboards have a very predictable geometry, so lens distortions are easy to counteract, and as a classic example for feature extraction, where a computer attempts to identify the distinct edges and corners of a chessboard in an image. [\cite{Forsyth2002}]
 
-Many projects have also addressed the additional challenges of using computer vision to analyze a picture of a chessboard and return the types and positions of each piece on the board. Most of these, however, focus on taking a single image and converting it to 
+Many projects have also addressed the additional challenges of using computer vision to analyze a picture of a chessboard and return the types and positions of each piece on the board. Being able to determine the position of all chess pieces on a given board simply from a photo or video helps tremendously in incorporating chess engines in physical products, and the image processing functions for detecting objects based on shape and color from multiple perspectives with varying levels of obstruction can be applied in countless scenarios. Most of projects focusing on chess vision focus on taking a single image and converting it to a board layout that shows which pieces occupy each square.
 
-% An example of a floating figure using the graphicx package.
-% Note that \label must occur AFTER (or within) \caption.
-% For figures, \caption should occur after the \includegraphics.
-% Note that IEEEtran v1.7 and later has special internal code that
-% is designed to preserve the operation of \label within \caption
-% even when the captionsoff option is in effect. However, because
-% of issues like this, it may be the safest practice to put all your
-% \label just after \caption rather than within \caption{}.
-%
-% Reminder: the "draftcls" or "draftclsnofoot", not "draft", class
-% option should be used if it is desired that the figures are to be
-% displayed while in draft mode.
-%
-%\begin{figure}[!t]
-%\centering
-%\includegraphics[width=2.5in]{myfigure}
-% where an .eps filename suffix will be assumed under latex, 
-% and a .pdf suffix will be assumed for pdflatex; or what has been declared
-% via \DeclareGraphicsExtensions.
-%\caption{Simulation Results.}
-%\label{fig_sim}
-%\end{figure}
+Some projects identify the location of a chessboard pattern in a picture and use a neural network to identify the location, color, and type of piece on each square [\cite{Czyzewski2018}], or use a pretrained neural network to identify piece type [\cite{Saurabh2019}].
 
-% Note that IEEE typically puts floats only at the top, even when this
-% results in a large percentage of a column being occupied by floats.
+The most relevant work to this project was a Masters Thesis done by Zoltán Orémuš that computes chess position from a single photo with no machine learning, only image processing. [\cite{Orémuš2018}] Major differences between this project and his algorithm are that this project uses fiducials to localize the chessboard, and this project needs no prior knowledge of piece geometry or height.
 
+Instead of focusing on capturing the the position of a chessboard from a single photo, this project aims to tell the position of a chessboard given an unbroken stream of photos starting at the beginning of a match. By tracking the position of each piece as each move is made, the complexity of the image processing required to obtain a full chess position. For each new frame that needs to be processed, one can use the knowledge of where pieces were in the past frame, rendering the problem of being able to differentiate piece types irrelevant. Because each piece is tracked as it moves from square to square, and each piece starts in a known square, the program can keep track of the type of each piece as it moves.
 
-% An example of a double column floating figure using two subfigures.
-% (The subfig.sty package must be loaded for this to work.)
-% The subfigure \label commands are set within each subfloat command,
-% and the \label for the overall figure must come after \caption.
-% \hfil is used as a separator to get equal spacing.
-% Watch out that the combined width of all the subfigures on a 
-% line do not exceed the text width or a line break will occur.
-%
-%\begin{figure*}[!t]
-%\centering
-%\subfloat[Case I]{\includegraphics[width=2.5in]{box}%
-%\label{fig_first_case}}
-%\hfil
-%\subfloat[Case II]{\includegraphics[width=2.5in]{box}%
-%\label{fig_second_case}}
-%\caption{Simulation results.}
-%\label{fig_sim}
-%\end{figure*}
-%
-% Note that often IEEE papers with subfigures do not employ subfigure
-% captions (using the optional argument to \subfloat[]), but instead will
-% reference/describe all of them (a), (b), etc., within the main caption.
+To keep this project small enough to be able to accomplish in one semester, several assumptions were made, including being able to customize the chessboard to have fiducials in each corner, and a custom pattern around the edge to assist in image processing of the chessboard. In addition, the color detection method was adapted specifically for the silver and gold pieces used with this chessboard.
 
+Some of the most important issues solved to be able to track pieces throughout a chess match were being able to determine how thresholds should be set to work in multiple lighting conditions, and how to tell when a user or any other obstruction is blocking the camera's view of the chessboard.
 
-% An example of a floating table. Note that, for IEEE style tables, the 
-% \caption command should come BEFORE the table. Table text will default to
-% \footnotesize as IEEE normally uses this smaller font for tables.
-% The \label must come after \caption as always.
-%
-%\begin{table}[!t]
-%% increase table row spacing, adjust to taste
-%\renewcommand{\arraystretch}{1.3}
-% if using array.sty, it might be a good idea to tweak the value of
-% \extrarowheight as needed to properly center the text within the cells
-%\caption{An Example of a Table}
-%\label{table_example}
-%\centering
-%% Some packages, such as MDW tools, offer better commands for making tables
-%% than the plain LaTeX2e tabular which is used here.
-%\begin{tabular}{|c||c|}
-%\hline
-%One & Two\\
-%\hline
-%Three & Four\\
-%\hline
-%\end{tabular}
-%\end{table}
-
-
-% Note that IEEE does not put floats in the very first column - or typically
-% anywhere on the first page for that matter. Also, in-text middle ("here")
-% positioning is not used. Most IEEE journals use top floats exclusively.
-% Note that, LaTeX2e, unlike IEEE journals, places footnotes above bottom
-% floats. This can be corrected via the \fnbelowfloat command of the
-% stfloats package.
+To accomplish the task of tracking chess pieces throughout a chess match, a custom chessboard was manufactured with tags and patterns to aid in image processing, and a camera was suspended above the chessboard with controllable LEDs lighting the chessboard. A chess tracking program was written in Python, using OpenCV, among other libraries, to continuously take images of the chessboard and compute the location and color of each piece on the board. These functions could easily be applied to tracking other objects that exist in known sections of a image.
 
 \section{Analysis of Applicable Standards}
+This project does not comply with IEEE Standard for Software Test Documentation (IEEE Std 829-1998), largely due to the absence of recorded test logs. Tests performed on the software either have no record stored anywhere of the execution or results of the test, with the only consequence of the test being that the code was modified to better adapt to the test environment.
 
-\section{Theoretical Considerations}
+This project does however comply with IEEE Standard for Software User Documentation (IEEE Std 1063-2001). Each function of the Python program has a multiline description of the purpose and use of the function, as well as inline comments describing the purpose of each line or group of lines. In addition, labeled illustrations are provided, including ideal pictures of each stage of the image processing, as well as a flowchart of the flow of the program.
+
+It should also be noted that the power supply used for powering the chessboard is certified by the Underwriters Laboratories.
 
 \section{Work}
-
 The computer vision program for monitoring the chessboard runs on a Raspberry Pi embedded in the frame of the chessboard. The program was written in Python, and can be split in three discrete sections: frame processing, where a picture of the chessboard is taken and analyzed to determine the position and color of each piece on the board. This information is then passed to the second section of the code that compares the current state of the board to the last state, and returns the move that was made to change the state of the board, if any. Lastly, another section of the code deals with peripherals meant to improve the user experience of the chessboard, including an animated representation of what the computer sees as the current board, and a custom PCB to control the chessboard, with buttons for starting, pausing, and stopping a game, as well as offering a draw or resigning.
 
 \subsection{Physical Components and Construction}
@@ -159,6 +90,7 @@ A variety of manufacturing methods were used to create the physical chessboard, 
 A custom PCB was designed using EAGLE. The purpose of this circuit board is to provide a user interface that doesn't require a mouse or keyboard. A number of inputs were added to this PCB to communicate with the Raspberry Pi, including 5 buttons: 1 to start or pause a chess match, 1 to stop an ongoing match, 1 to toggle whether the user plays as white or black, 1 button for requesting a hint from a chess engine, and 1 button for offering a draw.
 
 Figure \ref{PCB} shows the board design, the PCB has 2 copper layers, the red traces show the top layer, and blue denotes the bottom layer. Keen observers will note there is blue in the image than there is red, the bottom layer has a ground plane, so any "extra" copper not used for traces is connected to 0V.
+The full PCB design files can be found in the repository linked in Appendix \ref{Github repo}.
 
 \begin{figure}[!ht]
 	\centering
@@ -331,6 +263,7 @@ It is clear here that the wrist and the pinky both obstruct the edges of the che
 \vspace{12pt}
 
 \subsubsection{Piece Detection}
+\label{PieceDetection}
 Once the chessboard has been located and tested for obstructions, the program moves on to detecting where pieces are located on the chessboard.
 Since pieces should be located within the bounds of each square of the chessboard, the first step in detecting the pieces is to split up the input image into individual squares.
 
@@ -380,6 +313,18 @@ All the single square images are superimposed on the board locations they were t
 \vspace{12pt}
 
 \subsubsection{Color Detection}
+\label{ColorDetection}
+After all the squares have had edge detection run on them to determine if they are occupied, the last piece of information needed to determine the state of the chessboard is the color of each piece.
+
+As can be seen in prior figures, the chess pieces used for this project were silver and gold, these represent white and black respectively. To keep the terminology of sides consistent with standard chess piece nomenclature, pieces will be refered to as white or black, white refers to a silver piece, black refers to a gold piece.
+
+To speed up the processing of each frame, the color detection function is only run on squares that are occupied.
+
+To isolate the chess piece itself, a circular mask is used to only evaluate the color of the pixels inside the edges found in the piece detection function. The position of this mask is determined by calculating the average location of each edge, this centroid is used as the center coordinate of the circular mask.
+
+To determine the radius of the mask, the standard deviation of the Canny edge detection output is computed, this value is then scaled by 135\% and used as the radius of the circular mask.
+
+Once the pixels inside the chess piece have been isolated, the color of the piece is determined by converting the image from RGB to HSV. This makes it much easier to represent the color with a single number, as isolating the first layer of the image gives the hue of the pixel. Figure \ref{color zoomed} shows the hue layer of Figure \ref{piece zoomed} when masked using the edges shown in Figure \ref{piece detection zoomed} and labeled with the calculated color.
 
 \begin{figure}[!ht]
 	\centering
@@ -388,6 +333,8 @@ All the single square images are superimposed on the board locations they were t
 	\label{color zoomed}
 \end{figure}
 
+Determining whether a given piece is silver or gold is done by computing the average and standard deviation hue values of each pixel inside the mask. The standard deviation is then subtracted from the average pixel hue as an offset to exaggerate the difference between colors. As can be seen in Figure \ref{color}, a collection of all the color detection images of a chessboard with labeled colors and final offset hue, the white pieces are much more varied and splotchy when compared to the black pieces. In addition to lowering the average hue value of the piece, these dark section also make the standard deviation of the hue much larger. Thus, since the average hue of the white pixels are lower than the average value of the black pixels, and the standard deviation of white hues is larger than the standard deviation of black pixels, by subtracting the standard deviation from the average, the final offset hue values are even further separated.
+
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=\linewidth]{Images/ColorDetection.jpg}
@@ -395,26 +342,62 @@ All the single square images are superimposed on the board locations they were t
 	\label{color}
 \end{figure}
 
+Finally, to sort and classify each piece based on the final offset hue value, the hue values of each piece are sorted, and the lowest are classified as white. To determine how many of each color there should be on the board, the number of each color piece is tracked throughout the match. To start the game, there are always 16 of each color. Since white always moves first, we know the first move will be by white, the second by black, the third by white, and so on. If the total number of pieces counted in the piece detection function is lower than the previous number, we know a piece was captured, and by checking which side it was to move, one can determine the color of the piece that was captured.
+
+For example, if it is black's turn to move and a frame is read that only has 31 pieces in it, then black just captured a white piece, and now 16 black pieces are on the board and 15 white pieces are on the board.
+
+The classified output is then output as an 8x8 array, each value representing a square of the chessboard. A 0 value denotes an empty square, a 1 means the square is occupied by a black piece, and a 2 means the square is occupied by a white piece.
+
 \vspace{12pt}
 
 \subsection{Parsing Detected Moves}
+\label{MoveParsing}
+After all image processing has been done, the first step in determining what move was made is to determine if any move was made. This can be done simply by comparing the color array for the current frame with the color array of the last frame. If they are equal, than no move was made. Any differences mean a move was made. To measure how many differences there are between arrays, the old array is subtracted from the new array to get an array of differences. The number of non-zero values in this difference array are the number of squares that changed from occupied to empty, empty to occupied, or swapped colors.
+
+The move notation used in this project is Universal Chess Interface (UCI), a notation designed for chess programs on computers. A move is represented by the square the piece leaves, and the square the piece enters. Thus, white advancing their king's pawn is noted as "e2e4".
+
+To determine what type of move was made, the number of differences between the current and past arrays are counted. Simply as a result of how chess moves are made, there can only be 2-4 differences.
+
+\subsubsection{4 Squares Changed}
+The only case when the status of 4 squares are changed in one move is when castling, to determine who castled and on which side, one can simply check which corner the moves take place in, and output the corresponding UCI notation for that castling move.
+
+\subsubsection{3 Squares Changed}
+The only move where 3 squares change is when a pawn captures another pawn en passant. This means capturing a pawn that is next to yours by passing it and moving into the square behind it. This means the square the capturing pawn was on, and the square it moves to, and the square the captured pawn was on all change, resulting in a total of 3 squares changing.
+
+To get the uci notation of the en passant capture, whichever non-zero value of the difference array appears least is removed. Since the captured piece only appears in one square in the old array, and the capturing piece appears in one square in the old array and a different square in the new array, the captured pawn is effectively removed from consideration. Then, the altered difference array is passed onto the function dealing with difference arrays of 2 non-zero values.
+
+\subsubsection{2 Squares Changed}
+Most common moves result in only 2 squares being changed, this happens when one piece moves into an empty square or during normal captures.
+
+Since UCI notation only requires the origin and destination squares to characterize a move, all that is required to compute the move notation given which side is making a move, which squares changed, and the current and previous board layouts is to find the piece of the current colors turn that moved. To do this, one can take the location of the two non-zero elements of the difference array, and check the value of each element in the same location in the old array. The element in the old array that is the same color as the side making a move is the piece in the origin square, and the other non-zero element of the difference array has to be the destination square.
+
+\subsection{Move Recommendation}
+\label{MoveRec}
+Once the uci move notation is computed, it is send to a board object created using the python chess library that tracks the current layout of board as well as the past history of the game. This board object is then sent to a chess engine, which uses it to compute which move is best for whichever side is up.
 
 \section{Conclusions}
+%This is the most important section of the report. Here you should state if your work fulfilled the objectives or not. If it did, you need to discuss how it is demonstrated in this report that this actually happened. If it did not, then you need to say the reasons why and what should be done to fulfill with the objectives (not excuses, the discussion should be technical).  
+This chessboard meets the objectives stated in this report: it is able to continuously track chess pieces throughout a chess match in order to always know the layout of the pieces, and use that layout to suggest moves to the user, or play against a computer opponent.
+The tracking works by locating the chessboard in the frame of the image taken by the camera using Apriltags as described in Section \ref{ApriltagDetection}, then testing to make sure no objects cross the border of the chessboard to be able to obscure the view of each piece as described in \ref{KnotDetection}, then dividing the chessboard into each individual square and running Canny edge detection to determine whether the square is occupied as described in Section \ref{PieceDetection}. This information is then used to inform the color detection function described in Section \ref{ColorDetection} that determines the color of each piece, which is then fed to the move parsing function described in Section \ref{MoveParsing} that computes which move was made based on the change in the layout of the chessboard. This move is then sent to a chess engine as documented in Section \ref{MoveRec}.
 
 \section{Recommendations}
-Correct for lens distortion/fisheye effect, the knot detection is a little distorted and doesn't always match the template near the edges of the board.
+To save money in producing the product, the plastic parts should be made from injection molding instead of 3D printing, this allows for faster, more repeatable production, and is cheaper than buying thermoplastic filament in bulk. In addition, the ATMega328p microcontroller should be programmed in the factory in order to reduce time and manpower needed to program them on the board.
+The camera should be switched from a PiCamera to a USB camera to be more portable across devices as well as reduce the cost of components.
 
-Save images of each square that has a piece on it to build up a database of correctly labeled pieces in order to train a machine learning algorithm to recognize piece types so promoted pieces can be automatically recognized.
+This device could be sold as a training tool for chess players, it is easy to add a chess engine that is capable of beating even the best human players.
 
-Add mechanical actuators to move pieces automatically
+As this is a complex system designed and produced in a short amount of time, there are always many aspects that could be improved.
+The camera image could be improved by correcting for lens distortion and the fisheye effect. The knot detection is a little distorted and doesn't always match the template near the edges of the board. In addition, not enough effort was put into adapting the settings of the camera to get the best quality image for this project.
 
-Determine board orientation on first image, don't assume black side will be near certain apriltags
+Images of each square that has a piece on it should be saved to build up a database of correctly labeled pieces in order to train a machine learning algorithm to recognize piece types so promoted pieces can be automatically recognized. Right now, promoted pieces are automatically assumed to be promoted to a queen, but there are some situations where a player might choose to promote a pawn to a different piece.
 
-Generalize color determination settings to automatically work with any color
+Mechanical actuators can be added to allow the computer to move pieces automatically without user input.
 
-Add active lighting control to best enable piece and color detection
+The board orientation should be determined on first image instead of assuming the black pieces will be on the left and white pieces on the right.
 
-Rewrite knot detection to work with colors, not edges
+The color determination settings should automatically work with any color.
+
+The LED ring around the camera should adapt to changes in lighting in order to get the best piece and color detection.
 
 % if have a single appendix:
 %\appendix[Proof of the Zonklar Equations]
@@ -433,6 +416,7 @@ Rewrite knot detection to work with colors, not edges
 
 \appendices
 \section{Code Repository}
+\label{Github repo}
 The code for this project can be found here: \url{https://github.com/blemay360/Chessboard}
 
 % you can choose not to have a title for an appendix
